@@ -158,9 +158,26 @@ export default function AIAnalysisScreen() {
         cloudImageUrl = await uploadReportImageToSupabase(realPhoto, params.photoBase64);
       }
 
-      // Generate title from category and first part of address
+      // Generate intelligent title from category and location
       const addressHeadline = realAddress.split(',')[0].trim();
-      const reportTitle = `${aiCategory} near ${addressHeadline}`;
+      let reportTitle = `${aiCategory} near ${addressHeadline}`;
+      if (aiCategory === 'Others') {
+        const lowerDesc = realDesc.toLowerCase();
+        if (
+          lowerDesc.includes('snake') ||
+          lowerDesc.includes('cobra') ||
+          lowerDesc.includes('python') ||
+          lowerDesc.includes('viper') ||
+          lowerDesc.includes('animal') ||
+          aiDept.includes('Animal')
+        ) {
+          reportTitle = `Wildlife Hazard near ${addressHeadline}`;
+        } else if (lowerDesc.includes('tree') || lowerDesc.includes('branch')) {
+          reportTitle = `Fallen Tree / Debris near ${addressHeadline}`;
+        } else {
+          reportTitle = `Public Safety Hazard near ${addressHeadline}`;
+        }
+      }
 
       // Commit report to store and live Supabase
       const created = await addReport({

@@ -82,15 +82,19 @@ DEPARTMENT_METADATA = {
     },
     "Others": {
         "id": "b3a985d2-6d43-4f51-b844-3d0d8bb00101",
-        "name": "Road Maintenance Department",
-        "sla_hours": 48
+        "name": "Public Safety & Emergency Department",
+        "sla_hours": 24
     }
 }
 
 NON_CIVIC_CLASSES = {
     "person", "cell phone", "laptop", "tv", "bed", "couch", "chair",
-    "dining table", "refrigerator", "toilet", "cat", "dog", "keyboard",
+    "dining table", "refrigerator", "toilet", "keyboard",
     "mouse", "book", "teddy bear"
+}
+
+ANIMAL_CLASSES = {
+    "cat", "dog", "horse", "sheep", "cow", "elephant", "bear", "zebra", "giraffe", "bird"
 }
 
 GARBAGE_CLASSES = {
@@ -103,16 +107,29 @@ INFRA_CLASSES = {
     "traffic light", "fire hydrant", "stop sign", "parking meter"
 }
 
+WILDLIFE_ANIMAL_KEYWORDS = [
+    "snake", "serpent", "cobra", "viper", "python", "reptile", "animal", "dog", "puppy",
+    "stray dog", "rabid", "injured dog", "cow", "cattle", "bull", "monkey",
+    "cat", "kitten", "bird", "pigeon", "wildlife", "carcass", "dead animal"
+]
+
+ENVIRONMENT_HAZARD_KEYWORDS = [
+    "tree", "fallen tree", "branch", "trunk", "debris", "blocked road",
+    "landslide", "rockfall", "fire", "smoke", "gas leak"
+]
+
 HIGH_HAZARD_KEYWORDS = [
     "deep", "large", "crater", "accident", "injury", "sparking", "live wire",
     "electric", "burst", "flood", "flooding", "blocked", "ambulance", "traffic",
     "danger", "fatal", "manhole", "open drain", "fire", "high", "urgent",
-    "broken", "damaged", "severe", "critical", "destroy", "faulty", "hazard"
+    "broken", "damaged", "severe", "critical", "destroy", "faulty", "hazard",
+    "snake", "cobra", "viper", "rabid", "dead animal", "gas leak"
 ]
 
 MEDIUM_HAZARD_KEYWORDS = [
     "smell", "foul", "mosquitoes", "overflow", "stagnant", "cracked", "dim",
-    "dark", "puddle", "garbage", "trash", "waste", "drain", "medium", "moderate"
+    "dark", "puddle", "garbage", "trash", "waste", "drain", "medium", "moderate",
+    "animal", "stray", "debris"
 ]
 
 # ============================================================================
@@ -218,6 +235,10 @@ def analyze_nlp_text(text: str):
         category_hint = "Water Leak"
     elif any(k in lower_text for k in ["broken road", "asphalt", "cracked road", "divider", "footpath", "pavement"]):
         category_hint = "Broken Road"
+    elif any(k in lower_text for k in WILDLIFE_ANIMAL_KEYWORDS):
+        category_hint = "Others"
+    elif any(k in lower_text for k in ENVIRONMENT_HAZARD_KEYWORDS):
+        category_hint = "Others"
 
     return matched_high, matched_med, category_hint
 
@@ -266,6 +287,7 @@ def run_civic_vision_pipeline(pil_img: Any, text_hint: Optional[str]) -> Dict[st
     dominant_non_civic = False
     garbage_detected_items = []
     infra_detected_items = []
+    animal_detected_items = []
 
     # 1. YOLOv8 Inference
     if yolo_model:
@@ -280,6 +302,8 @@ def run_civic_vision_pipeline(pil_img: Any, text_hint: Optional[str]) -> Dict[st
 
                 if cls_name == "person":
                     person_max_area = max(person_max_area, box_area)
+                elif cls_name in ANIMAL_CLASSES:
+                    animal_detected_items.append((cls_name, conf, xyxyn))
                 elif cls_name in NON_CIVIC_CLASSES and box_area > 0.12:
                     dominant_non_civic = True
                 elif cls_name in GARBAGE_CLASSES:
@@ -315,25 +339,43 @@ def run_civic_vision_pipeline(pil_img: Any, text_hint: Optional[str]) -> Dict[st
     specular_mask = (val > 180) & (sat < 65)
     specular_ratio = float(np.sum(specular_mask) / (h * w))
 
-    # Dark cavity / crater detection (Potholes)
+    # Dark cavity / crater detection (Potholes vs Slender Hazards like snakes, wires, branches)
     blurred = cv2.GaussianBlur(gray, (7, 7), 0)
     thresh_val = int(np.mean(gray) * 0.72)
     _, dark_thresh = cv2.threshold(blurred, thresh_val, 255, cv2.THRESH_BINARY_INV)
     contours, _ = cv2.findContours(dark_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
     pothole_box = None
+    slender_hazard_box = None
     max_c_area = 0.0
     for c in contours:
         c_area = cv2.contourArea(c) / (h * w)
-        if 0.02 < c_area < 0.70 and c_area > max_c_area:
-            max_c_area = c_area
+        if 0.012 < c_area < 0.70 and c_area > max_c_area:
             x, y, cw, ch = cv2.boundingRect(c)
-            pothole_box = [round(y/h, 3), round(x/w, 3), round((y+ch)/h, 3), round((x+cw)/w, 3)]
+            # Calculate elongation ratio (length vs thickness)
+            aspect_ratio = max(cw / max(ch, 1), ch / max(cw, 1))
+            
+            # Potholes are rounded cavities/craters (aspect_ratio < 3.5).
+            # A snake, live electrical wire, fallen cable, or branch is slender (aspect_ratio >= 3.5)!
+            if aspect_ratio >= 3.5:
+                slender_hazard_box = [round(y/h, 3), round(x/w, 3), round((y+ch)/h, 3), round((x+cw)/w, 3)]
+            else:
+                max_c_area = c_area
+                pothole_box = [round(y/h, 3), round(x/w, 3), round((y+ch)/h, 3), round((x+cw)/w, 3)]
 
     # Decision Matrix
     if text_hint:
         category = text_hint
         conf = 0.965
+    elif animal_detected_items:
+        category = "Others"
+        conf = 0.940
+        for a_name, a_conf, a_xy in animal_detected_items:
+            detected_boxes.append(BoundingBox(
+                box_2d=[round(a_xy[1], 3), round(a_xy[0], 3), round(a_xy[3], 3), round(a_xy[2], 3)],
+                label=f"stray_{a_name}",
+                confidence=round(a_conf, 3)
+            ))
     elif infra_detected_items:
         category = "Streetlight"
         conf = 0.895
@@ -355,6 +397,15 @@ def run_civic_vision_pipeline(pil_img: Any, text_hint: Optional[str]) -> Dict[st
     elif specular_ratio > 0.15:
         category = "Water Leak"
         conf = 0.910
+    elif slender_hazard_box is not None:
+        # Elongated object: snake / wildlife / fallen cable / branch - NOT a round pothole crater!
+        category = "Others"
+        conf = 0.915
+        detected_boxes.append(BoundingBox(
+            box_2d=slender_hazard_box,
+            label="slender_hazard_or_wildlife",
+            confidence=0.915
+        ))
     elif pothole_box is not None and mean_sat < 55:
         category = "Pothole"
         conf = 0.935
@@ -455,10 +506,21 @@ async def analyze_report(req: AnalysisRequest):
     severity, hazard_score = compute_severity(matched_high, matched_med, predicted_category)
 
     # 5. Department Routing & SLA Mapping
-    dept_info = DEPARTMENT_METADATA.get(predicted_category, DEPARTMENT_METADATA["Pothole"])
+    dept_info = DEPARTMENT_METADATA.get(predicted_category, DEPARTMENT_METADATA["Others"])
     suggested_dept = dept_info["name"]
     department_id = dept_info["id"]
     sla_hours = dept_info["sla_hours"]
+
+    # Intelligent Sub-Department Routing for "Others" (Wildlife / Animals vs Disaster)
+    if predicted_category == "Others":
+        lower_desc = (req.description or "").lower()
+        has_animal_signal = any(w in lower_desc for w in WILDLIFE_ANIMAL_KEYWORDS) or any("wildlife" in b.label or "stray" in b.label for b in boxes)
+        if has_animal_signal:
+            suggested_dept = "Animal Control & Public Safety Department"
+            sla_hours = 12
+        elif any(w in lower_desc for w in ENVIRONMENT_HAZARD_KEYWORDS):
+            suggested_dept = "Disaster & Emergency Management"
+            sla_hours = 24
 
     # 6. Spatial Duplicate Detection
     baseline_lat = 19.1197

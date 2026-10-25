@@ -27,7 +27,6 @@ export const POPULAR_CIVIC_BODIES = [
   'Nashik Municipal Corporation (NMC)',
   'Nagpur Municipal Corporation (NMC)',
   'Chhatrapati Sambhajinagar Municipal Corporation (CSMC)',
-  'Gram Panchayat (Rural Area)',
 ];
 
 /**

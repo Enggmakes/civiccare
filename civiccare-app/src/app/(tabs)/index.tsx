@@ -66,8 +66,8 @@ export default function HomeScreen() {
       if (res.status === 'ok') {
         setSelectedCity(res.location.shortCity);
         Alert.alert(
-          'Location Detected',
-          `Viewing complaints for: ${res.location.shortCity}\n(${res.location.civicBody})`
+          'Browsing Location Updated',
+          `Viewing complaints for: ${res.location.shortCity}\n(${res.location.civicBody})\n\n(Your permanent home profile remains unchanged.)`
         );
       } else if (res.status === 'denied') {
         Alert.alert('Location Permission Denied', 'Please enable location permissions in your device settings.');

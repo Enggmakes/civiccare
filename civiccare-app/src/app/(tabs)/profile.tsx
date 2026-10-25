@@ -11,6 +11,10 @@ import {
   Alert,
   Linking,
   Platform,
+  Modal,
+  TextInput,
+  ActivityIndicator,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -37,10 +41,38 @@ import {
   Clock,
   Sun,
   Moon,
+  Edit3,
+  X,
 } from 'lucide-react-native';
+import { detectCivicBodyFromGPS } from '@/services/civicLocation';
 
-const EMERGENCY_HELPLINES = [
-  { name: 'BMC 24x7 Civic Disaster & Grievance', number: '1916', desc: 'Potholes, flooding, open manholes' },
+const getCivicHelpline = (ward: string) => {
+  const lower = (ward || '').toLowerCase();
+  if (lower.includes('pune') || lower.includes('pmc')) {
+    return { name: 'PMC 24x7 Citizen Care Helpline', number: '18001030222', desc: 'Potholes, sanitation & water supply' };
+  }
+  if (lower.includes('pimpri') || lower.includes('pcmc')) {
+    return { name: 'PCMC Sarathi Grievance Center', number: '02067333333', desc: 'Drainage, waste & road repairs' };
+  }
+  if (lower.includes('navi mumbai') || lower.includes('nmmc')) {
+    return { name: 'NMMC Citizen Grievance Cell', number: '1800222309', desc: 'Municipal complaints & disaster dispatch' };
+  }
+  if (lower.includes('thane') || lower.includes('tmc')) {
+    return { name: 'TMC Disaster & Grievance Control', number: '1800222391', desc: 'Civic hazards & municipal aid' };
+  }
+  if (lower.includes('mumbai') || lower.includes('bmc') || lower.includes('andheri')) {
+    return { name: 'BMC 24x7 Civic Disaster & Grievance', number: '1916', desc: 'Potholes, flooding, open manholes' };
+  }
+  if (lower.includes('palghar')) {
+    return { name: 'Palghar Municipal Council Control', number: '02525252322', desc: 'Civic grievances & local council' };
+  }
+  if (lower.includes('panchayat') || lower.includes('gram')) {
+    return { name: 'District Panchayat & Rural Disaster Control', number: '1077', desc: 'Zilla Parishad & Gram Panchayat emergency' };
+  }
+  return { name: 'State Civic Disaster Grievance (112)', number: '112', desc: 'All-in-one emergency & public hazards' };
+};
+
+const UNIVERSAL_HELPLINES = [
   { name: 'Ambulance & Medical Emergency', number: '108', desc: 'Emergency medical dispatch' },
   { name: 'Police Control Room', number: '100', desc: 'Law enforcement & public safety' },
   { name: 'Fire Control Room', number: '101', desc: 'Fire hazard & rescue services' },
@@ -49,7 +81,7 @@ const EMERGENCY_HELPLINES = [
 export default function ProfileScreen() {
   const router = useRouter();
   const { user } = useUser();
-  const { isSignedIn, signOut, signIn } = useAuth();
+  const { isSignedIn, signOut, signIn, updateWard } = useAuth();
   const { getUserReports } = useReports();
   const { isDark, toggleTheme, colors } = useAppTheme();
 
@@ -68,6 +100,55 @@ export default function ProfileScreen() {
   const citizenEmail = user?.primaryEmailAddress?.emailAddress || (isSignedIn ? 'No email linked' : 'Sign in to sync reports');
   const [pushEnabled, setPushEnabled] = useState(true);
   const [smsEnabled, setSmsEnabled] = useState(true);
+
+  // Edit Ward State (Option 2: Home & Profile Isolated)
+  const [showWardModal, setShowWardModal] = useState(false);
+  const [editingWard, setEditingWard] = useState('');
+  const [isGpsLocating, setIsGpsLocating] = useState(false);
+  const [isSavingWard, setIsSavingWard] = useState(false);
+
+  const activeHelplines = [getCivicHelpline(citizenWard), ...UNIVERSAL_HELPLINES];
+
+  const handleOpenWardModal = () => {
+    setEditingWard(citizenWard);
+    setShowWardModal(true);
+  };
+
+  const handleGpsDetectForProfile = async () => {
+    setIsGpsLocating(true);
+    try {
+      const res = await detectCivicBodyFromGPS();
+      if (res.status === 'ok') {
+        setEditingWard(res.location.civicBody);
+      } else if (res.status === 'denied') {
+        Alert.alert('Permission Denied', 'Please grant location permission to detect your current ward.');
+      } else {
+        Alert.alert('Detection Error', 'Could not detect your current GPS location.');
+      }
+    } catch {
+      Alert.alert('GPS Error', 'Could not detect current location.');
+    } finally {
+      setIsGpsLocating(false);
+    }
+  };
+
+  const handleSaveWard = async () => {
+    if (!editingWard.trim()) {
+      Alert.alert('Required', 'Please enter your municipal corporation, council, or gram panchayat.');
+      return;
+    }
+    setIsSavingWard(true);
+    try {
+      await updateWard(editingWard.trim());
+      setShowWardModal(false);
+      Alert.alert(
+        'Profile Ward Updated',
+        `Your permanent residential ward is now set to:\n${editingWard.trim()}`
+      );
+    } finally {
+      setIsSavingWard(false);
+    }
+  };
 
   const handleCallHelpline = (number: string, name: string) => {
     if (Platform.OS === 'web') {
@@ -121,10 +202,16 @@ export default function ProfileScreen() {
             />
             <View style={styles.profileNameCol}>
               <Text style={[styles.profileName, isDark && { color: colors.text }]}>{citizenName}</Text>
-              <View style={styles.wardBadge}>
+              <TouchableOpacity
+                style={[styles.wardBadge, isDark && { backgroundColor: '#1E293B', borderColor: colors.border }]}
+                activeOpacity={0.7}
+                onPress={handleOpenWardModal}>
                 <MapPin size={12} color={CivicCareColors.brandPrimary} />
-                <Text style={styles.profileRole}>{citizenWard}</Text>
-              </View>
+                <Text style={[styles.profileRole, isDark && { color: colors.textSecondary }]} numberOfLines={1}>
+                  {citizenWard}
+                </Text>
+                <Edit3 size={11} color={CivicCareColors.brandPrimary} style={{ marginLeft: 2 }} />
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -198,12 +285,12 @@ export default function ProfileScreen() {
         {/* Emergency Civic Helplines */}
         <Text style={[styles.sectionHeading, isDark && { color: colors.textSecondary }]}>Emergency Civic Helplines</Text>
         <View style={[styles.settingsGroup, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
-          {EMERGENCY_HELPLINES.map((hl, idx) => (
+          {activeHelplines.map((hl, idx) => (
             <TouchableOpacity
-              key={hl.number}
+              key={`${hl.name}-${hl.number}`}
               style={[
                 styles.settingsRow,
-                idx === EMERGENCY_HELPLINES.length - 1 && { borderBottomWidth: 0 },
+                idx === activeHelplines.length - 1 && { borderBottomWidth: 0 },
                 isDark && { borderBottomColor: colors.border },
               ]}
               activeOpacity={0.7}
@@ -286,6 +373,89 @@ export default function ProfileScreen() {
         </View>
 
       </ScrollView>
+
+      {/* Edit Permanent Profile Location Modal */}
+      <Modal
+        visible={showWardModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowWardModal(false)}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}>
+          <View style={[styles.modalContent, isDark && { backgroundColor: '#18181B', borderColor: colors.border }]}>
+            <View style={styles.modalHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.modalTitle, isDark && { color: colors.text }]}>
+                  Home Ward & Municipality
+                </Text>
+                <Text style={[styles.modalSubtitle, isDark && { color: colors.textSecondary }]}>
+                  Permanent residence for official civic council services
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.modalCloseBtn}
+                onPress={() => setShowWardModal(false)}>
+                <X size={20} color={isDark ? colors.textSecondary : '#64748B'} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Auto-Detect Live GPS button */}
+            <TouchableOpacity
+              style={[
+                styles.modalGpsBtn,
+                isDark && { backgroundColor: '#1E293B', borderColor: '#3B82F6' },
+              ]}
+              onPress={handleGpsDetectForProfile}
+              disabled={isGpsLocating}>
+              {isGpsLocating ? (
+                <ActivityIndicator size="small" color="#3B82F6" />
+              ) : (
+                <MapPin size={16} color="#3B82F6" />
+              )}
+              <Text style={styles.modalGpsBtnText}>
+                {isGpsLocating ? 'Detecting Current Location...' : 'Auto-Detect via Live GPS'}
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={[styles.modalInputLabel, isDark && { color: colors.textSecondary }]}>
+              OR TYPE CUSTOM CITY / WARD / GRAM PANCHAYAT:
+            </Text>
+
+            <View style={[styles.modalInputWrapper, isDark && { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+              <MapPin size={16} color={isDark ? colors.textTertiary : CivicCareColors.textTertiary} />
+              <TextInput
+                style={[styles.modalInput, isDark && { color: colors.text }]}
+                value={editingWard}
+                onChangeText={setEditingWard}
+                placeholder="e.g. Pune Municipal Corporation (PMC)"
+                placeholderTextColor={isDark ? colors.textTertiary : '#94A3B8'}
+              />
+            </View>
+
+            <View style={styles.modalActionsRow}>
+              <TouchableOpacity
+                style={[styles.modalCancelBtn, isDark && { borderColor: colors.border }]}
+                onPress={() => setShowWardModal(false)}>
+                <Text style={[styles.modalCancelBtnText, isDark && { color: colors.textSecondary }]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalSaveBtn}
+                onPress={handleSaveWard}
+                disabled={isSavingWard}>
+                {isSavingWard ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.modalSaveBtnText}>Save Permanent Ward</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -365,11 +535,125 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    alignSelf: 'flex-start',
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginTop: 2,
   },
   profileRole: {
     fontSize: 12,
-    color: CivicCareColors.brandPrimary,
+    color: CivicCareColors.textMain,
     fontWeight: '600',
+    maxWidth: 200,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    padding: Spacing.four,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.four,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Shadows.md,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: Spacing.three,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  modalCloseBtn: {
+    padding: 4,
+  },
+  modalGpsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1.5,
+    borderColor: '#93C5FD',
+    borderRadius: BorderRadius.lg,
+    paddingVertical: 10,
+    marginBottom: Spacing.three,
+  },
+  modalGpsBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#2563EB',
+  },
+  modalInputLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  modalInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#F8FAFC',
+    marginBottom: Spacing.four,
+  },
+  modalInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#0F172A',
+    paddingVertical: 2,
+  },
+  modalActionsRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  modalCancelBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: BorderRadius.lg,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  modalCancelBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  modalSaveBtn: {
+    backgroundColor: CivicCareColors.brandPrimary,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: BorderRadius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalSaveBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   contactDivider: {
     height: 1,

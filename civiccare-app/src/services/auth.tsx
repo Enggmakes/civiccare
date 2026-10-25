@@ -33,12 +33,14 @@ interface AuthContextType {
     password: string,
     metadata?: { fullName?: string; ward?: string; phone?: string }
   ) => Promise<{ error: any; user?: any }>;
+  updateWard: (newWard: string) => Promise<boolean>;
 }
 
 interface UserContextType {
   isLoaded: boolean;
   isSignedIn: boolean;
   user: CitizenUser | null;
+  updateWard: (newWard: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -49,12 +51,14 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   signIn: async () => ({ error: null }),
   signUp: async () => ({ error: null }),
+  updateWard: async () => false,
 });
 
 const UserContext = createContext<UserContextType>({
   isLoaded: true,
   isSignedIn: false,
   user: null,
+  updateWard: async () => false,
 });
 
 export function useAuth() {
@@ -124,7 +128,11 @@ export function CivicCareAuthProvider({ children }: { children: React.ReactNode 
         // Check if citizen previously selected Guest mode
         const isGuest = await safeStorage.getItem('@civiccare_guest_mode');
         if (isGuest === 'true') {
-          setUser(GUEST_CITIZEN);
+          const savedGuestWard = await safeStorage.getItem('@civiccare_guest_ward');
+          setUser({
+            ...GUEST_CITIZEN,
+            ward: savedGuestWard || GUEST_CITIZEN.ward,
+          });
           setIsSignedIn(true);
         }
       }
@@ -249,6 +257,29 @@ export function CivicCareAuthProvider({ children }: { children: React.ReactNode 
     }
   };
 
+  const updateWard = async (newWard: string): Promise<boolean> => {
+    const trimmedWard = newWard.trim();
+    if (!trimmedWard) return false;
+
+    setUser(prev => (prev ? { ...prev, ward: trimmedWard } : null));
+
+    try {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (currentUser) {
+        await supabase.auth.updateUser({
+          data: { ward: trimmedWard },
+        });
+        await supabase.from('profiles').update({ ward: trimmedWard }).eq('id', currentUser.id);
+      } else {
+        await safeStorage.setItem('@civiccare_guest_ward', trimmedWard);
+      }
+      return true;
+    } catch (e) {
+      console.warn('Failed to persist ward update:', e);
+      return true;
+    }
+  };
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -271,12 +302,14 @@ export function CivicCareAuthProvider({ children }: { children: React.ReactNode 
         signOut,
         signIn,
         signUp,
+        updateWard,
       }}>
       <UserContext.Provider
         value={{
           isLoaded,
           isSignedIn,
           user,
+          updateWard,
         }}>
         {children}
       </UserContext.Provider>

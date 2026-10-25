@@ -17,6 +17,8 @@ import { useRouter } from 'expo-router';
 import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 import { useReports } from '@/services/reportsStore';
 import { useUser, useAuth } from '@/services/clerk';
+import { useAppTheme } from '@/services/themeContext';
+import { ThemeSwitch } from '@/components/ThemeSwitch';
 import {
   User,
   Phone,
@@ -33,6 +35,8 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
+  Sun,
+  Moon,
 } from 'lucide-react-native';
 
 const EMERGENCY_HELPLINES = [
@@ -47,6 +51,7 @@ export default function ProfileScreen() {
   const { user } = useUser();
   const { isSignedIn, signOut, signIn } = useAuth();
   const { reports } = useReports();
+  const { isDark, toggleTheme, colors } = useAppTheme();
 
   // Dynamic Metrics from real reports
   const totalSubmitted = reports.length;
@@ -85,21 +90,21 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { paddingTop: insets.top }, isDark && { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       {/* Header */}
-      <View style={styles.headerBar}>
-        <Text style={styles.headerTitle}>Profile & Settings</Text>
+      <View style={[styles.headerBar, isDark && { borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, isDark && { color: colors.text }]}>Profile & Settings</Text>
       </View>
 
       <ScrollView
-        style={styles.scrollView}
+        style={[styles.scrollView, isDark && { backgroundColor: colors.background }]}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 95 }]}
         showsVerticalScrollIndicator={false}>
         
         {/* User Profile Card */}
-        <View style={styles.profileCard}>
+        <View style={[styles.profileCard, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
           <View style={styles.avatarRow}>
             <Image
               source={
@@ -110,7 +115,7 @@ export default function ProfileScreen() {
               style={styles.profileAvatar}
             />
             <View style={styles.profileNameCol}>
-              <Text style={styles.profileName}>{citizenName}</Text>
+              <Text style={[styles.profileName, isDark && { color: colors.text }]}>{citizenName}</Text>
               <View style={styles.wardBadge}>
                 <MapPin size={12} color={CivicCareColors.brandPrimary} />
                 <Text style={styles.profileRole}>{citizenWard}</Text>
@@ -118,16 +123,16 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          <View style={styles.contactDivider} />
+          <View style={[styles.contactDivider, isDark && { backgroundColor: colors.border }]} />
 
           <View style={styles.contactInfoRow}>
-            <Phone size={14} color={CivicCareColors.textSecondary} />
-            <Text style={styles.contactText}>{citizenPhone}</Text>
+            <Phone size={14} color={isDark ? colors.textSecondary : CivicCareColors.textSecondary} />
+            <Text style={[styles.contactText, isDark && { color: colors.textSecondary }]}>{citizenPhone}</Text>
           </View>
 
           <View style={styles.contactInfoRow}>
-            <Mail size={14} color={CivicCareColors.textSecondary} />
-            <Text style={styles.contactText}>
+            <Mail size={14} color={isDark ? colors.textSecondary : CivicCareColors.textSecondary} />
+            <Text style={[styles.contactText, isDark && { color: colors.textSecondary }]}>
               {user?.primaryEmailAddress?.emailAddress || 'citizen.mumbai@gov.in'}
             </Text>
           </View>
@@ -136,52 +141,78 @@ export default function ProfileScreen() {
         {/* Dynamic Activity Metric Counters */}
         <View style={styles.metricsRow}>
           <TouchableOpacity
-            style={styles.metricCard}
+            style={[styles.metricCard, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
             activeOpacity={0.8}
             onPress={() => router.push('/(tabs)/reports')}>
             <Text style={styles.metricNumber}>{totalSubmitted}</Text>
-            <Text style={styles.metricLabel}>Total Filed</Text>
+            <Text style={[styles.metricLabel, isDark && { color: colors.textSecondary }]}>Total Filed</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.metricCard}
+            style={[styles.metricCard, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
             activeOpacity={0.8}
             onPress={() => router.push('/(tabs)/reports')}>
-            <Text style={[styles.metricNumber, { color: '#D97706' }]}>{inProgressCount}</Text>
-            <Text style={styles.metricLabel}>Active / In Progress</Text>
+            <Text style={[styles.metricNumber, { color: '#F59E0B' }]}>{inProgressCount}</Text>
+            <Text style={[styles.metricLabel, isDark && { color: colors.textSecondary }]}>Active / In Progress</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.metricCard}
+            style={[styles.metricCard, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
             activeOpacity={0.8}
             onPress={() => router.push('/(tabs)/reports')}>
-            <Text style={[styles.metricNumber, { color: '#16A34A' }]}>{resolvedCount}</Text>
-            <Text style={styles.metricLabel}>Resolved</Text>
+            <Text style={[styles.metricNumber, { color: '#10B981' }]}>{resolvedCount}</Text>
+            <Text style={[styles.metricLabel, isDark && { color: colors.textSecondary }]}>Resolved</Text>
           </TouchableOpacity>
         </View>
 
+        {/* Appearance & Theme Toggle (Custom Animated Day/Night Switch) */}
+        <Text style={[styles.sectionHeading, isDark && { color: colors.textSecondary }]}>Appearance & Theme</Text>
+        <View style={[styles.settingsGroup, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+          <View style={[styles.settingsRow, { borderBottomWidth: 0 }]}>
+            <View style={styles.rowIconText}>
+              <View style={[styles.iconBox, { backgroundColor: isDark ? '#1E293B' : '#FEF3C7' }]}>
+                {isDark ? (
+                  <Moon size={18} color="#93C5FD" />
+                ) : (
+                  <Sun size={18} color="#D97706" />
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.settingsLabel, isDark && { color: colors.text }]}>
+                  {isDark ? 'Dark Theme' : 'Light Theme'}
+                </Text>
+                <Text style={[styles.helplineDesc, isDark && { color: colors.textSecondary }]}>
+                  {isDark ? 'Night sky mode active' : 'Day sky mode active'}
+                </Text>
+              </View>
+            </View>
+            <ThemeSwitch isDark={isDark} onToggle={toggleTheme} />
+          </View>
+        </View>
+
         {/* Emergency Civic Helplines */}
-        <Text style={styles.sectionHeading}>Emergency Civic Helplines</Text>
-        <View style={styles.settingsGroup}>
+        <Text style={[styles.sectionHeading, isDark && { color: colors.textSecondary }]}>Emergency Civic Helplines</Text>
+        <View style={[styles.settingsGroup, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
           {EMERGENCY_HELPLINES.map((hl, idx) => (
             <TouchableOpacity
               key={hl.number}
               style={[
                 styles.settingsRow,
                 idx === EMERGENCY_HELPLINES.length - 1 && { borderBottomWidth: 0 },
+                isDark && { borderBottomColor: colors.border },
               ]}
               activeOpacity={0.7}
               onPress={() => handleCallHelpline(hl.number, hl.name)}>
               <View style={styles.rowIconText}>
-                <View style={[styles.iconBox, { backgroundColor: '#FEE2E2' }]}>
+                <View style={[styles.iconBox, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEE2E2' }]}>
                   <PhoneCall size={18} color="#DC2626" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.settingsLabel}>{hl.name}</Text>
-                  <Text style={styles.helplineDesc}>{hl.desc}</Text>
+                  <Text style={[styles.settingsLabel, isDark && { color: colors.text }]}>{hl.name}</Text>
+                  <Text style={[styles.helplineDesc, isDark && { color: colors.textSecondary }]}>{hl.desc}</Text>
                 </View>
               </View>
-              <View style={styles.callBadge}>
+              <View style={[styles.callBadge, isDark && { backgroundColor: 'rgba(239, 68, 68, 0.2)', borderColor: 'rgba(239, 68, 68, 0.4)' }]}>
                 <Text style={styles.callBadgeText}>{hl.number}</Text>
               </View>
             </TouchableOpacity>
@@ -189,40 +220,40 @@ export default function ProfileScreen() {
         </View>
 
         {/* Citizen Notification Preferences */}
-        <Text style={styles.sectionHeading}>Notification Preferences</Text>
-        <View style={styles.settingsGroup}>
-          <View style={styles.settingsRow}>
+        <Text style={[styles.sectionHeading, isDark && { color: colors.textSecondary }]}>Notification Preferences</Text>
+        <View style={[styles.settingsGroup, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+          <View style={[styles.settingsRow, isDark && { borderBottomColor: colors.border }]}>
             <View style={styles.rowIconText}>
-              <View style={[styles.iconBox, { backgroundColor: '#DCFCE7' }]}>
+              <View style={[styles.iconBox, { backgroundColor: isDark ? 'rgba(22, 163, 74, 0.15)' : '#DCFCE7' }]}>
                 <Bell size={18} color="#16A34A" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.settingsLabel}>Push Notifications</Text>
-                <Text style={styles.helplineDesc}>Live updates when city crew dispatches</Text>
+                <Text style={[styles.settingsLabel, isDark && { color: colors.text }]}>Push Notifications</Text>
+                <Text style={[styles.helplineDesc, isDark && { color: colors.textSecondary }]}>Live updates when city crew dispatches</Text>
               </View>
             </View>
             <Switch
               value={pushEnabled}
               onValueChange={setPushEnabled}
-              trackColor={{ false: '#E2E8F0', true: '#93C5FD' }}
+              trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#93C5FD' }}
               thumbColor={pushEnabled ? CivicCareColors.brandPrimary : '#94A3B8'}
             />
           </View>
 
           <View style={[styles.settingsRow, { borderBottomWidth: 0 }]}>
             <View style={styles.rowIconText}>
-              <View style={[styles.iconBox, { backgroundColor: '#E0F2FE' }]}>
+              <View style={[styles.iconBox, { backgroundColor: isDark ? 'rgba(2, 132, 199, 0.15)' : '#E0F2FE' }]}>
                 <Phone size={18} color="#0284C7" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.settingsLabel}>SMS & WhatsApp Alerts</Text>
-                <Text style={styles.helplineDesc}>Receive ticket progress on mobile</Text>
+                <Text style={[styles.settingsLabel, isDark && { color: colors.text }]}>SMS & WhatsApp Alerts</Text>
+                <Text style={[styles.helplineDesc, isDark && { color: colors.textSecondary }]}>Receive ticket progress on mobile</Text>
               </View>
             </View>
             <Switch
               value={smsEnabled}
               onValueChange={setSmsEnabled}
-              trackColor={{ false: '#E2E8F0', true: '#93C5FD' }}
+              trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#93C5FD' }}
               thumbColor={smsEnabled ? CivicCareColors.brandPrimary : '#94A3B8'}
             />
           </View>
@@ -234,14 +265,15 @@ export default function ProfileScreen() {
             style={[
               styles.authButton,
               isSignedIn ? styles.authButtonSignOut : styles.authButtonSignIn,
+              isDark && isSignedIn && { backgroundColor: 'rgba(239, 68, 68, 0.15)', borderColor: 'rgba(239, 68, 68, 0.35)' },
             ]}
             activeOpacity={0.8}
             onPress={handleSignOutToggle}>
-            <LogOut size={18} color={isSignedIn ? '#DC2626' : '#FFFFFF'} />
+            <LogOut size={18} color={isSignedIn ? '#EF4444' : '#FFFFFF'} />
             <Text
               style={[
                 styles.authButtonText,
-                isSignedIn ? { color: '#DC2626' } : { color: '#FFFFFF' },
+                isSignedIn ? { color: '#EF4444' } : { color: '#FFFFFF' },
               ]}>
               {isSignedIn ? 'Sign Out of Account' : 'Sign In with Phone'}
             </Text>

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/services/supabase';
 import {
   View,
   Text,
@@ -63,6 +64,15 @@ const getCivicHelpline = (ward: string) => {
   if (lower.includes('mumbai') || lower.includes('bmc') || lower.includes('andheri')) {
     return { name: 'BMC 24x7 Civic Disaster & Grievance', number: '1916', desc: 'Potholes, flooding, open manholes' };
   }
+  if (lower.includes('ahilyanagar') || lower.includes('ahmednagar')) {
+    return { name: 'Ahilyanagar Municipal Corporation', number: '18002330241', desc: 'Civic grievances & 24x7 control room' };
+  }
+  if (lower.includes('junnar')) {
+    return { name: 'Junnar Municipal Council Control', number: '02132222035', desc: 'Taluka municipal & civic helpline' };
+  }
+  if (lower.includes('parner')) {
+    return { name: 'Parner Nagar Panchayat Control', number: '02488221235', desc: 'Taluka civic & emergency control' };
+  }
   if (lower.includes('palghar')) {
     return { name: 'Palghar Municipal Council Control', number: '02525252322', desc: 'Civic grievances & local council' };
   }
@@ -107,7 +117,40 @@ export default function ProfileScreen() {
   const [isGpsLocating, setIsGpsLocating] = useState(false);
   const [isSavingWard, setIsSavingWard] = useState(false);
 
-  const activeHelplines = [getCivicHelpline(citizenWard), ...UNIVERSAL_HELPLINES];
+  // Dynamic Supabase Cloud Helpline (0 KB bundle size)
+  const [dbHelpline, setDbHelpline] = useState<{ name: string; number: string; desc: string } | null>(null);
+
+  useEffect(() => {
+    let isCancelled = false;
+    const fetchDbHelpline = async () => {
+      try {
+        const cityKeyword = citizenWard.split(/[,( -]/)[0].trim();
+        if (!cityKeyword) return;
+        const { data, error } = await supabase
+          .from('civic_helplines')
+          .select('name, number, desc_text')
+          .or(`city.ilike.%${cityKeyword}%,district.ilike.%${cityKeyword}%`)
+          .limit(1)
+          .maybeSingle();
+
+        if (!error && data && !isCancelled) {
+          setDbHelpline({
+            name: data.name,
+            number: data.number,
+            desc: data.desc_text,
+          });
+        }
+      } catch {
+        // Fallback gracefully to offline helper
+      }
+    };
+    fetchDbHelpline();
+    return () => {
+      isCancelled = true;
+    };
+  }, [citizenWard]);
+
+  const activeHelplines = [dbHelpline || getCivicHelpline(citizenWard), ...UNIVERSAL_HELPLINES];
 
   const handleOpenWardModal = () => {
     setEditingWard(citizenWard);

@@ -246,3 +246,38 @@ DROP POLICY IF EXISTS "Public Storage Upload" ON storage.objects;
 CREATE POLICY "Public Storage Upload"
     ON storage.objects FOR INSERT
     WITH CHECK (bucket_id = 'report-images');
+
+-- 12. Create Civic Helplines Directory Table (Zero-Bundle Dynamic Lookup)
+CREATE TABLE IF NOT EXISTS public.civic_helplines (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    city VARCHAR(100) NOT NULL,
+    district VARCHAR(100) NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    number VARCHAR(30) NOT NULL,
+    desc_text VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS & public read access
+ALTER TABLE public.civic_helplines ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Public read on civic_helplines" ON public.civic_helplines;
+CREATE POLICY "Public read on civic_helplines"
+    ON public.civic_helplines FOR SELECT
+    USING (true);
+
+-- Seed Initial Maharashtra Civic Authorities & Talukas
+INSERT INTO public.civic_helplines (city, district, name, number, desc_text) VALUES
+('Ahilyanagar', 'Ahilyanagar', 'Ahilyanagar Municipal Corporation', '18002330241', 'Civic grievances & 24x7 control room'),
+('Parner', 'Ahilyanagar', 'Parner Nagar Panchayat Control', '02488221235', 'Taluka civic & emergency control'),
+('Junnar', 'Pune', 'Junnar Municipal Council Control', '02132222035', 'Taluka municipal & civic helpline'),
+('Pune', 'Pune', 'PMC 24x7 Citizen Care Helpline', '18001030222', 'Potholes, sanitation & water supply'),
+('Pimpri-Chinchwad', 'Pune', 'PCMC Sarathi Grievance Center', '02067333333', 'Drainage, waste & road repairs'),
+('Mumbai', 'Mumbai', 'BMC 24x7 Civic Disaster & Grievance', '1916', 'Potholes, flooding, open manholes'),
+('Thane', 'Thane', 'TMC Disaster & Grievance Control', '1800222391', 'Civic hazards & municipal aid'),
+('Navi Mumbai', 'Thane', 'NMMC Citizen Grievance Cell', '1800222309', 'Municipal complaints & disaster dispatch'),
+('Palghar', 'Palghar', 'Palghar Municipal Council Control', '02525252322', 'Civic grievances & local council'),
+('Nashik', 'Nashik', 'Nashik Municipal Corporation Control', '02532575631', 'Civic disaster & sanitation hotline'),
+('Nagpur', 'Nagpur', 'NMC Citizen Care Center', '07122567035', 'Grievance & civic emergency helpline'),
+('Chhatrapati Sambhajinagar', 'Chhatrapati Sambhajinagar', 'CSMC 24x7 Grievance Helpline', '02402333536', 'Municipal disaster & civic control')
+ON CONFLICT DO NOTHING;
+

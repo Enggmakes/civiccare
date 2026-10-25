@@ -9,6 +9,9 @@ import {
   Image,
   Dimensions,
   StatusBar,
+  Modal,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -16,6 +19,11 @@ import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/the
 import { useReports } from '@/services/reportsStore';
 import { useUser } from '@/services/clerk';
 import { useAppTheme } from '@/services/themeContext';
+import {
+  getShortCityName,
+  detectCivicBodyFromGPS,
+  POPULAR_CIVIC_BODIES,
+} from '@/services/civicLocation';
 import {
   MapPin,
   ChevronDown,
@@ -26,6 +34,10 @@ import {
   CheckCircle2,
   AlertCircle,
   Bell,
+  Check,
+  Sparkles,
+  Compass,
+  X,
 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
@@ -48,7 +60,35 @@ export default function HomeScreen() {
   const { reports, setFilterCategory, filterCategory } = useReports();
   const { user } = useUser();
   const { isDark, colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  const [showCityModal, setShowCityModal] = useState(false);
+  const [isLocatingCity, setIsLocatingCity] = useState(false);
+
+  // Dynamic city name resolved directly from user profile (e.g. Pune for Rit), user selection, or GPS
+  const displayCity = selectedCity || getShortCityName(user?.ward) || 'Pune';
+
+  const handleAutoDetectCity = async () => {
+    setIsLocatingCity(true);
+    try {
+      const res = await detectCivicBodyFromGPS();
+      if (res) {
+        setSelectedCity(res.shortCity);
+        setShowCityModal(false);
+        Alert.alert(
+          'Location Updated',
+          `Viewing complaints for: ${res.shortCity}\n(${res.civicBody})`
+        );
+      } else {
+        Alert.alert('Location Permission', 'Please enable location permissions in your device settings.');
+      }
+    } catch {
+      Alert.alert('GPS Error', 'Could not detect current location.');
+    } finally {
+      setIsLocatingCity(false);
+    }
+  };
 
   const filteredReports = reports.filter(r => {
     if (searchQuery.trim().length > 0) {
@@ -68,14 +108,12 @@ export default function HomeScreen() {
     }
   };
 
-  const insets = useSafeAreaInsets();
-
   return (
     <View style={[styles.container, { paddingTop: insets.top }, isDark && { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <ScrollView
         style={[styles.scrollView, isDark && { backgroundColor: colors.background }]}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 95 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 115 }]}
         showsVerticalScrollIndicator={false}>
         
         {/* Top Header: Location Selector & User Avatar */}
@@ -83,9 +121,9 @@ export default function HomeScreen() {
           <TouchableOpacity
             style={[styles.locationSelector, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
             activeOpacity={0.7}
-            onPress={() => router.push('/(tabs)/explore')}>
+            onPress={() => setShowCityModal(true)}>
             <MapPin size={18} color={isDark ? colors.tint : CivicCareColors.brandPrimary} />
-            <Text style={[styles.locationText, isDark && { color: colors.text }]}>Mumbai</Text>
+            <Text style={[styles.locationText, isDark && { color: colors.text }]}>{displayCity}</Text>
             <ChevronDown size={16} color={isDark ? colors.textSecondary : CivicCareColors.textSecondary} />
           </TouchableOpacity>
 
@@ -269,8 +307,109 @@ export default function HomeScreen() {
             ))
           )}
         </View>
-
       </ScrollView>
+
+      {/* City & Civic Body Switcher Modal */}
+      <Modal
+        visible={showCityModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowCityModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, isDark && { backgroundColor: '#18181B', borderColor: colors.border }]}>
+            <View style={[styles.modalHeader, isDark && { borderBottomColor: colors.border }]}>
+              <View>
+                <Text style={[styles.modalTitle, isDark && { color: colors.text }]}>
+                  Select City / Civic Authority
+                </Text>
+                <Text style={[styles.modalSubtitle, isDark && { color: colors.textSecondary }]}>
+                  Filters complaints for your locality
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.modalCloseBtn}
+                onPress={() => setShowCityModal(false)}>
+                <X size={20} color={isDark ? colors.textSecondary : '#64748B'} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalList} showsVerticalScrollIndicator={false}>
+              {/* GPS Auto-Detect Button */}
+              <TouchableOpacity
+                style={[
+                  styles.modalItem,
+                  styles.gpsModalItem,
+                  isDark && { backgroundColor: '#1E293B', borderColor: '#3B82F6' },
+                ]}
+                onPress={handleAutoDetectCity}
+                disabled={isLocatingCity}>
+                <View style={styles.modalItemLeft}>
+                  {isLocatingCity ? (
+                    <ActivityIndicator size="small" color="#3B82F6" />
+                  ) : (
+                    <Sparkles size={18} color="#3B82F6" />
+                  )}
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.modalItemText, { color: '#3B82F6', fontWeight: '700' }]}>
+                      {isLocatingCity ? 'Detecting Live GPS...' : 'Use Current GPS Location'}
+                    </Text>
+                    <Text style={[styles.modalItemSubtext, isDark && { color: colors.textTertiary }]}>
+                      Auto-detects whether you are in Pune, Mumbai, or Gram Panchayat
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+              <Text style={[styles.modalGroupTitle, isDark && { color: colors.textSecondary }]}>
+                POPULAR CIVIC DISTRICTS & CORPORATIONS
+              </Text>
+
+              {[
+                { city: 'Pune', label: 'Pune (Pune Municipal Corporation - PMC)' },
+                { city: 'Pimpri-Chinchwad', label: 'Pimpri-Chinchwad (PCMC)' },
+                { city: 'Mumbai', label: 'Mumbai (Brihanmumbai Municipal Corp - BMC)' },
+                { city: 'Thane', label: 'Thane (Thane Municipal Corporation - TMC)' },
+                { city: 'Navi Mumbai', label: 'Navi Mumbai (NMMC)' },
+                { city: 'Palghar', label: 'Palghar (Palghar Municipal Council)' },
+                { city: 'Nashik', label: 'Nashik (Nashik Municipal Corporation)' },
+                { city: 'Nagpur', label: 'Nagpur (Nagpur Municipal Corporation)' },
+                { city: 'Gram Panchayat', label: 'Local Gram Panchayat (Rural District)' },
+              ].map(item => {
+                const isSelected = displayCity.toLowerCase() === item.city.toLowerCase();
+                return (
+                  <TouchableOpacity
+                    key={item.city}
+                    style={[
+                      styles.modalItem,
+                      isDark && { borderBottomColor: colors.border },
+                      isSelected && (isDark ? { backgroundColor: '#27272A' } : { backgroundColor: '#EFF6FF' }),
+                    ]}
+                    onPress={() => {
+                      setSelectedCity(item.city);
+                      setShowCityModal(false);
+                    }}>
+                    <View style={styles.modalItemLeft}>
+                      <MapPin
+                        size={16}
+                        color={isSelected ? CivicCareColors.brandPrimary : (isDark ? colors.textTertiary : '#94A3B8')}
+                      />
+                      <Text
+                        style={[
+                          styles.modalItemText,
+                          isDark && { color: colors.text },
+                          isSelected && { color: CivicCareColors.brandPrimary, fontWeight: '700' },
+                        ]}>
+                        {item.label}
+                      </Text>
+                    </View>
+                    {isSelected && <Check size={18} color={CivicCareColors.brandPrimary} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -602,5 +741,86 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: CivicCareColors.textTertiary,
     marginHorizontal: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '75%',
+    paddingBottom: 30,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.three,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  modalCloseBtn: {
+    padding: 6,
+  },
+  modalList: {
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.two,
+  },
+  modalItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    borderRadius: BorderRadius.lg,
+  },
+  gpsModalItem: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1.5,
+    borderColor: '#93C5FD',
+    marginBottom: 10,
+  },
+  modalItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  modalItemText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E293B',
+  },
+  modalItemSubtext: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  modalGroupTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+    marginTop: 10,
+    marginBottom: 6,
+    paddingHorizontal: 4,
   },
 });

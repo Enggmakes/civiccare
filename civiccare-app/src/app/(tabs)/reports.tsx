@@ -95,7 +95,7 @@ export default function MyReportsScreen() {
       {/* Reports List */}
       <ScrollView
         style={[styles.scrollView, isDark && { backgroundColor: colors.background }]}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 95 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 120 }]}
         showsVerticalScrollIndicator={false}>
         {filtered.length === 0 ? (
           <View style={styles.emptyContainer}>

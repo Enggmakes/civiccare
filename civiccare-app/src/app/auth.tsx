@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,12 +11,19 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 import { useAuth } from '@/services/auth';
 import { useAppTheme } from '@/services/themeContext';
+import {
+  detectCivicBodyFromGPS,
+  POPULAR_CIVIC_BODIES,
+  DetectedCivicLocation,
+} from '@/services/civicLocation';
 import {
   Mail,
   Lock,
@@ -25,6 +32,11 @@ import {
   User,
   Phone,
   MapPin,
+  ChevronDown,
+  Check,
+  Sparkles,
+  Compass,
+  X,
 } from 'lucide-react-native';
 
 export default function AuthScreen() {
@@ -38,9 +50,47 @@ export default function AuthScreen() {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [ward, setWard] = useState('Ward K-West (Andheri West)');
+  const [ward, setWard] = useState('Pune Municipal Corporation (PMC)');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDetectingGps, setIsDetectingGps] = useState(false);
+  const [detectedGps, setDetectedGps] = useState<DetectedCivicLocation | null>(null);
+  const [showWardModal, setShowWardModal] = useState(false);
+
+  // Auto-detect GPS civic body once when user switches to Sign Up
+  useEffect(() => {
+    if (isSignUp && !detectedGps) {
+      handleAutoDetectGPS(false);
+    }
+  }, [isSignUp]);
+
+  const handleAutoDetectGPS = async (showAlert = true) => {
+    setIsDetectingGps(true);
+    try {
+      const res = await detectCivicBodyFromGPS();
+      if (res) {
+        setDetectedGps(res);
+        setWard(res.civicBody);
+        if (showAlert) {
+          Alert.alert(
+            'GPS Location Detected',
+            `Assigned to: ${res.civicBody}\n(City/District: ${res.shortCity})`
+          );
+        }
+      } else if (showAlert) {
+        Alert.alert(
+          'Location Permission',
+          'Please grant location permission to auto-detect your local Municipal Corporation or Gram Panchayat.'
+        );
+      }
+    } catch (err) {
+      if (showAlert) {
+        Alert.alert('GPS Error', 'Could not detect location. You can select your civic body from the dropdown.');
+      }
+    } finally {
+      setIsDetectingGps(false);
+    }
+  };
 
   const handleAuthSubmit = async () => {
     if (isSignUp) {
@@ -188,20 +238,157 @@ export default function AuthScreen() {
               </View>
             )}
 
-            {/* Municipal Ward (Sign Up Only) */}
+            {/* Municipal Corporation / Gram Panchayat (Sign Up Only) */}
             {isSignUp && (
               <View style={styles.inputGroup}>
-                <Text style={[styles.fieldLabel, isDark && { color: colors.text }]}>Municipal Ward</Text>
-                <View style={[styles.inputWrapper, isDark && { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
-                  <MapPin size={18} color={isDark ? colors.textTertiary : CivicCareColors.textTertiary} style={styles.inputIcon} />
-                  <TextInput
-                    style={[styles.textInput, isDark && { color: colors.text }]}
-                    placeholder="e.g. Ward K-West (Andheri West)"
-                    placeholderTextColor={isDark ? colors.textTertiary : CivicCareColors.textTertiary}
-                    value={ward}
-                    onChangeText={setWard}
-                  />
+                <View style={styles.labelWithGpsRow}>
+                  <Text style={[styles.fieldLabel, isDark && { color: colors.text }]}>
+                    Civic Body / Ward
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.gpsAutoDetectBtn, isDark && { backgroundColor: '#1E293B', borderColor: colors.border }]}
+                    onPress={() => handleAutoDetectGPS(true)}
+                    activeOpacity={0.7}
+                    disabled={isDetectingGps}>
+                    {isDetectingGps ? (
+                      <ActivityIndicator size="small" color={CivicCareColors.brandPrimary} />
+                    ) : (
+                      <>
+                        <Compass size={13} color={CivicCareColors.brandPrimary} />
+                        <Text style={styles.gpsAutoDetectText}>Auto-Detect GPS</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
                 </View>
+
+                {/* Dropdown Selector Wrapper */}
+                <TouchableOpacity
+                  style={[styles.inputWrapper, isDark && { backgroundColor: colors.inputBg, borderColor: colors.border }]}
+                  activeOpacity={0.8}
+                  onPress={() => setShowWardModal(true)}>
+                  <MapPin size={18} color={isDark ? colors.textTertiary : CivicCareColors.textTertiary} style={styles.inputIcon} />
+                  <Text
+                    style={[styles.dropdownSelectedText, isDark && { color: colors.text }]}
+                    numberOfLines={1}>
+                    {ward || 'Select Municipal Corporation or Gram Panchayat'}
+                  </Text>
+                  <ChevronDown size={18} color={isDark ? colors.textSecondary : CivicCareColors.textSecondary} />
+                </TouchableOpacity>
+
+                {/* Modal for Selecting Municipal Corporation or Gram Panchayat */}
+                <Modal
+                  visible={showWardModal}
+                  transparent={true}
+                  animationType="slide"
+                  onRequestClose={() => setShowWardModal(false)}>
+                  <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, isDark && { backgroundColor: '#18181B', borderColor: colors.border }]}>
+                      {/* Modal Header */}
+                      <View style={[styles.modalHeader, isDark && { borderBottomColor: colors.border }]}>
+                        <View>
+                          <Text style={[styles.modalTitle, isDark && { color: colors.text }]}>
+                            Select Local Civic Body
+                          </Text>
+                          <Text style={[styles.modalSubtitle, isDark && { color: colors.textSecondary }]}>
+                            Municipal Corporation, Council, or Gram Panchayat
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.modalCloseBtn}
+                          onPress={() => setShowWardModal(false)}>
+                          <X size={20} color={isDark ? colors.textSecondary : '#64748B'} />
+                        </TouchableOpacity>
+                      </View>
+
+                      <ScrollView style={styles.modalList} showsVerticalScrollIndicator={false}>
+                        {/* GPS Auto-Detect Option at Top */}
+                        <TouchableOpacity
+                          style={[
+                            styles.modalItem,
+                            styles.gpsModalItem,
+                            isDark && { backgroundColor: '#1E293B', borderColor: '#3B82F6' },
+                          ]}
+                          onPress={() => {
+                            handleAutoDetectGPS(true);
+                          }}>
+                          <View style={styles.modalItemLeft}>
+                            <Sparkles size={18} color="#3B82F6" />
+                            <View style={{ flex: 1 }}>
+                              <Text style={[styles.modalItemText, { color: '#3B82F6', fontWeight: '700' }]}>
+                                {isDetectingGps ? 'Detecting GPS Coordinates...' : (detectedGps ? `GPS: ${detectedGps.civicBody}` : 'Auto-Detect via GPS')}
+                              </Text>
+                              <Text style={[styles.modalItemSubtext, isDark && { color: colors.textTertiary }]}>
+                                Uses GPS coordinates to find your exact municipality / gram panchayat
+                              </Text>
+                            </View>
+                          </View>
+                          {detectedGps && ward === detectedGps.civicBody && (
+                            <Check size={18} color="#3B82F6" />
+                          )}
+                        </TouchableOpacity>
+
+                        <Text style={[styles.modalGroupTitle, isDark && { color: colors.textSecondary }]}>
+                          POPULAR MUNICIPAL BODIES
+                        </Text>
+
+                        {POPULAR_CIVIC_BODIES.map(item => {
+                          const isSelected = ward === item;
+                          return (
+                            <TouchableOpacity
+                              key={item}
+                              style={[
+                                styles.modalItem,
+                                isDark && { borderBottomColor: colors.border },
+                                isSelected && (isDark ? { backgroundColor: '#27272A' } : { backgroundColor: '#EFF6FF' }),
+                              ]}
+                              onPress={() => {
+                                setWard(item);
+                                setShowWardModal(false);
+                              }}>
+                              <View style={styles.modalItemLeft}>
+                                <MapPin
+                                  size={16}
+                                  color={isSelected ? CivicCareColors.brandPrimary : (isDark ? colors.textTertiary : '#94A3B8')}
+                                />
+                                <Text
+                                  style={[
+                                    styles.modalItemText,
+                                    isDark && { color: colors.text },
+                                    isSelected && { color: CivicCareColors.brandPrimary, fontWeight: '700' },
+                                  ]}>
+                                  {item}
+                                </Text>
+                              </View>
+                              {isSelected && <Check size={18} color={CivicCareColors.brandPrimary} />}
+                            </TouchableOpacity>
+                          );
+                        })}
+
+                        {/* Custom Ward / Neighborhood Input */}
+                        <View style={{ paddingVertical: 14 }}>
+                          <Text style={[styles.modalGroupTitle, isDark && { color: colors.textSecondary }]}>
+                            OR TYPE CUSTOM WARD / GRAM PANCHAYAT:
+                          </Text>
+                          <TextInput
+                            style={[
+                              styles.modalCustomInput,
+                              isDark && { backgroundColor: colors.inputBg, borderColor: colors.border, color: colors.text },
+                            ]}
+                            placeholder="e.g. Wagholi Gram Panchayat, Kothrud Ward"
+                            placeholderTextColor={isDark ? colors.textTertiary : '#94A3B8'}
+                            value={ward}
+                            onChangeText={setWard}
+                          />
+                          <TouchableOpacity
+                            style={styles.modalConfirmBtn}
+                            onPress={() => setShowWardModal(false)}>
+                            <Text style={styles.modalConfirmBtnText}>Save Selection</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </ScrollView>
+                    </View>
+                  </View>
+                </Modal>
               </View>
             )}
 
@@ -386,5 +573,137 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: CivicCareColors.brandPrimary,
+  },
+  labelWithGpsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  gpsAutoDetectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#EFF6FF',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  gpsAutoDetectText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: CivicCareColors.brandPrimary,
+  },
+  dropdownSelectedText: {
+    flex: 1,
+    fontSize: 14,
+    color: CivicCareColors.textMain,
+    fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '80%',
+    paddingBottom: 30,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.three,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  modalSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  modalCloseBtn: {
+    padding: 6,
+  },
+  modalList: {
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.two,
+  },
+  modalItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    borderRadius: BorderRadius.lg,
+  },
+  gpsModalItem: {
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1.5,
+    borderColor: '#93C5FD',
+    marginBottom: 10,
+  },
+  modalItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  modalItemText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1E293B',
+  },
+  modalItemSubtext: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  modalGroupTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#94A3B8',
+    letterSpacing: 0.5,
+    marginTop: 10,
+    marginBottom: 6,
+    paddingHorizontal: 4,
+  },
+  modalCustomInput: {
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    borderRadius: BorderRadius.xl,
+    paddingHorizontal: Spacing.three,
+    fontSize: 14,
+    backgroundColor: '#F8FAFC',
+    color: '#0F172A',
+    marginBottom: 10,
+  },
+  modalConfirmBtn: {
+    backgroundColor: CivicCareColors.brandPrimary,
+    height: 46,
+    borderRadius: BorderRadius.xl,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalConfirmBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
   },
 });

@@ -58,9 +58,10 @@ export default function ProfileScreen() {
   const inProgressCount = reports.filter(r => r.status === 'In Progress' || r.status === 'Submitted' || r.status === 'AI Classification' || r.status === 'Sent to Department').length;
   const resolvedCount = reports.filter(r => r.status === 'Resolved').length;
 
-  const [citizenName, setCitizenName] = useState(user?.fullName || 'Rajesh Sharma');
-  const [citizenWard, setCitizenWard] = useState('Ward K-West (Andheri West)');
-  const [citizenPhone, setCitizenPhone] = useState(user?.primaryPhoneNumber?.phoneNumber || '+91 98201 12345');
+  const citizenName = user?.fullName || (isSignedIn ? 'Citizen' : 'Guest Citizen');
+  const citizenWard = user?.ward || 'Palghar, Maharashtra';
+  const citizenPhone = user?.primaryPhoneNumber?.phoneNumber || (isSignedIn ? 'No phone linked' : 'Tap Sign In to link');
+  const citizenEmail = user?.primaryEmailAddress?.emailAddress || (isSignedIn ? 'No email linked' : 'Sign in to sync reports');
   const [pushEnabled, setPushEnabled] = useState(true);
   const [smsEnabled, setSmsEnabled] = useState(true);
 
@@ -133,7 +134,7 @@ export default function ProfileScreen() {
           <View style={styles.contactInfoRow}>
             <Mail size={14} color={isDark ? colors.textSecondary : CivicCareColors.textSecondary} />
             <Text style={[styles.contactText, isDark && { color: colors.textSecondary }]}>
-              {user?.primaryEmailAddress?.emailAddress || 'citizen.mumbai@gov.in'}
+              {citizenEmail}
             </Text>
           </View>
         </View>

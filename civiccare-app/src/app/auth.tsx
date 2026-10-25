@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -57,31 +57,38 @@ export default function AuthScreen() {
   const [detectedGps, setDetectedGps] = useState<DetectedCivicLocation | null>(null);
   const [showWardModal, setShowWardModal] = useState(false);
 
-  // Auto-detect GPS civic body once when user switches to Sign Up
-  useEffect(() => {
-    if (isSignUp && !detectedGps) {
-      handleAutoDetectGPS(false);
-    }
-  }, [isSignUp]);
+  const autoDetectTried = useRef(false);
+  const wardEditedByUser = useRef(false);
 
   const handleAutoDetectGPS = async (showAlert = true) => {
     setIsDetectingGps(true);
     try {
       const res = await detectCivicBodyFromGPS();
-      if (res) {
-        setDetectedGps(res);
-        setWard(res.civicBody);
+      if (res.status === 'ok') {
+        setDetectedGps(res.location);
+        if (showAlert || !wardEditedByUser.current) {
+          setWard(res.location.civicBody);
+        }
         if (showAlert) {
           Alert.alert(
             'GPS Location Detected',
-            `Assigned to: ${res.civicBody}\n(City/District: ${res.shortCity})`
+            `Assigned to: ${res.location.civicBody}\n(City/District: ${res.location.shortCity})`
           );
         }
-      } else if (showAlert) {
-        Alert.alert(
-          'Location Permission',
-          'Please grant location permission to auto-detect your local Municipal Corporation or Gram Panchayat.'
-        );
+      } else if (res.status === 'denied') {
+        if (showAlert) {
+          Alert.alert(
+            'Location Permission Denied',
+            'Please enable location permission in your device settings to auto-detect your local Municipal Corporation or Gram Panchayat.'
+          );
+        }
+      } else {
+        if (showAlert) {
+          Alert.alert(
+            'Detection Failed',
+            'Could not detect civic location from GPS. Please select your municipal corporation or gram panchayat from the list.'
+          );
+        }
       }
     } catch (err) {
       if (showAlert) {
@@ -91,6 +98,14 @@ export default function AuthScreen() {
       setIsDetectingGps(false);
     }
   };
+
+  // Auto-detect GPS civic body once when user switches to Sign Up
+  useEffect(() => {
+    if (isSignUp && !autoDetectTried.current) {
+      autoDetectTried.current = true;
+      handleAutoDetectGPS(false);
+    }
+  }, [isSignUp]);
 
   const handleAuthSubmit = async () => {
     if (isSignUp) {
@@ -342,6 +357,7 @@ export default function AuthScreen() {
                                 isSelected && (isDark ? { backgroundColor: '#27272A' } : { backgroundColor: '#EFF6FF' }),
                               ]}
                               onPress={() => {
+                                wardEditedByUser.current = true;
                                 setWard(item);
                                 setShowWardModal(false);
                               }}>
@@ -377,7 +393,10 @@ export default function AuthScreen() {
                             placeholder="e.g. Wagholi Gram Panchayat, Kothrud Ward"
                             placeholderTextColor={isDark ? colors.textTertiary : '#94A3B8'}
                             value={ward}
-                            onChangeText={setWard}
+                            onChangeText={text => {
+                              wardEditedByUser.current = true;
+                              setWard(text);
+                            }}
                           />
                           <TouchableOpacity
                             style={styles.modalConfirmBtn}

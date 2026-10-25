@@ -73,15 +73,17 @@ export default function HomeScreen() {
     setIsLocatingCity(true);
     try {
       const res = await detectCivicBodyFromGPS();
-      if (res) {
-        setSelectedCity(res.shortCity);
+      if (res.status === 'ok') {
+        setSelectedCity(res.location.shortCity);
         setShowCityModal(false);
         Alert.alert(
           'Location Updated',
-          `Viewing complaints for: ${res.shortCity}\n(${res.civicBody})`
+          `Viewing complaints for: ${res.location.shortCity}\n(${res.location.civicBody})`
         );
+      } else if (res.status === 'denied') {
+        Alert.alert('Location Permission Denied', 'Please enable location permissions in your device settings.');
       } else {
-        Alert.alert('Location Permission', 'Please enable location permissions in your device settings.');
+        Alert.alert('Detection Error', 'Could not detect current location. Please select a city from the list.');
       }
     } catch {
       Alert.alert('GPS Error', 'Could not detect current location.');

@@ -16,6 +16,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 import { useReports } from '@/services/reportsStore';
+import { useUser, useAuth } from '@/services/auth';
 import { useAppTheme } from '@/services/themeContext';
 import { uploadReportImageToSupabase } from '@/services/storageUploader';
 import { ArrowLeft, Cpu, CheckCircle2, Circle } from 'lucide-react-native';
@@ -30,6 +31,8 @@ export default function AIAnalysisScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isDark, colors } = useAppTheme();
+  const { user } = useUser();
+  const { isSignedIn } = useAuth();
   const params = useLocalSearchParams<{
     photoUri?: string;
     photoBase64?: string;
@@ -179,6 +182,10 @@ export default function AIAnalysisScreen() {
         }
       }
 
+      // Determine author ID for user report isolation
+      const isGuest = !isSignedIn || !user || user.id === 'guest_citizen';
+      const authorUserId = isGuest ? 'guest_citizen' : user.id;
+
       // Commit report to store and live Supabase
       const created = await addReport({
         title: reportTitle,
@@ -192,7 +199,8 @@ export default function AIAnalysisScreen() {
         image_url: cloudImageUrl,
         department_name: aiDept,
         department_id: aiDeptId,
-      });
+        user_id: authorUserId,
+      }, authorUserId);
 
       // Navigate to Screen 6: Report Submitted
       setTimeout(() => {

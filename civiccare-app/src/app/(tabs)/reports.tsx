@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 import { useReports } from '@/services/reportsStore';
+import { useUser, useAuth } from '@/services/auth';
 import { useAppTheme } from '@/services/themeContext';
 import {
   Clock,
@@ -23,12 +24,18 @@ import {
 
 export default function MyReportsScreen() {
   const router = useRouter();
-  const { reports } = useReports();
+  const { getUserReports } = useReports();
+  const { user } = useUser();
+  const { isSignedIn } = useAuth();
   const { isDark, colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<'All' | 'Active' | 'Resolved'>('All');
 
-  const filtered = reports.filter(r => {
+  const isGuest = !isSignedIn || !user || user.id === 'guest_citizen';
+  const currentUserId = isGuest ? 'guest_citizen' : user.id;
+  const myReports = getUserReports(currentUserId);
+
+  const filtered = myReports.filter(r => {
     if (activeTab === 'Active') return r.status !== 'Resolved';
     if (activeTab === 'Resolved') return r.status === 'Resolved';
     return true;
@@ -71,7 +78,7 @@ export default function MyReportsScreen() {
               ]}>
               {tab} (
               {
-                reports.filter(r =>
+                myReports.filter(r =>
                   tab === 'Active'
                     ? r.status !== 'Resolved'
                     : tab === 'Resolved'
@@ -94,7 +101,9 @@ export default function MyReportsScreen() {
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyTitle, isDark && { color: colors.text }]}>No reports found</Text>
             <Text style={[styles.emptySubtext, isDark && { color: colors.textSecondary }]}>
-              You have no {activeTab.toLowerCase()} reports at this time.
+              {isGuest
+                ? 'You have not filed any reports in Guest mode yet.'
+                : `You have no ${activeTab.toLowerCase()} reports filed under your account.`}
             </Text>
           </View>
         ) : (

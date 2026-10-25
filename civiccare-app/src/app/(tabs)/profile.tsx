@@ -50,13 +50,17 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user } = useUser();
   const { isSignedIn, signOut, signIn } = useAuth();
-  const { reports } = useReports();
+  const { getUserReports } = useReports();
   const { isDark, toggleTheme, colors } = useAppTheme();
 
-  // Dynamic Metrics from real reports
-  const totalSubmitted = reports.length;
-  const inProgressCount = reports.filter(r => r.status === 'In Progress' || r.status === 'Submitted' || r.status === 'AI Classification' || r.status === 'Sent to Department').length;
-  const resolvedCount = reports.filter(r => r.status === 'Resolved').length;
+  const isGuest = !isSignedIn || !user || user.id === 'guest_citizen';
+  const currentUserId = isGuest ? 'guest_citizen' : user.id;
+  const myReports = getUserReports(currentUserId);
+
+  // Dynamic Metrics isolated specifically for this logged-in citizen
+  const totalSubmitted = myReports.length;
+  const inProgressCount = myReports.filter(r => r.status === 'In Progress' || r.status === 'Submitted' || r.status === 'AI Classification' || r.status === 'Sent to Department').length;
+  const resolvedCount = myReports.filter(r => r.status === 'Resolved').length;
 
   const citizenName = user?.fullName || (isSignedIn ? 'Citizen' : 'Guest Citizen');
   const citizenWard = user?.ward || 'Palghar, Maharashtra';

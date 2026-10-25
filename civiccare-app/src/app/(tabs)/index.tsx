@@ -1,0 +1,600 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  Image,
+  Dimensions,
+  StatusBar,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
+import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
+import { useReports } from '@/services/reportsStore';
+import { useUser } from '@/services/clerk';
+import {
+  MapPin,
+  ChevronDown,
+  Search,
+  Camera,
+  Clock,
+  Navigation,
+  CheckCircle2,
+  AlertCircle,
+  Bell,
+} from 'lucide-react-native';
+
+const { width } = Dimensions.get('window');
+
+// 9 Official Issue Categories with Clean High-Resolution Flaticon Colored Icons
+const CATEGORIES = [
+  { id: 'Pothole', name: 'Pothole', image: require('@/assets/civiccare/icons/pothole.png') },
+  { id: 'Garbage', name: 'Garbage', image: require('@/assets/civiccare/icons/garbage.png') },
+  { id: 'Streetlight', name: 'Streetlight', image: require('@/assets/civiccare/icons/streetlight.png') },
+  { id: 'Water Leak', name: 'Water Leak', image: require('@/assets/civiccare/icons/water_leak.png') },
+  { id: 'Broken Road', name: 'Broken Road', image: require('@/assets/civiccare/icons/broken_road.png') },
+  { id: 'Sewage', name: 'Sewage', image: require('@/assets/civiccare/icons/sewage.png') },
+  { id: 'Illegal Dumping', name: 'Illegal Dumping', image: require('@/assets/civiccare/icons/illegal_dumping.png') },
+  { id: 'Encroachment', name: 'Encroachment', image: require('@/assets/civiccare/icons/encroachment.png') },
+  { id: 'Others', name: 'Others', image: require('@/assets/civiccare/icons/others.png') },
+];
+
+export default function HomeScreen() {
+  const router = useRouter();
+  const { reports, setFilterCategory, filterCategory } = useReports();
+  const { user } = useUser();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredReports = reports.filter(r => {
+    if (searchQuery.trim().length > 0) {
+      return (
+        r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.location_address.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    return true;
+  });
+
+  const handleCategoryPress = (categoryName: string) => {
+    if (filterCategory === categoryName) {
+      setFilterCategory(null);
+    } else {
+      setFilterCategory(categoryName);
+    }
+  };
+
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="dark-content" />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 95 }]}
+        showsVerticalScrollIndicator={false}>
+        
+        {/* Top Header: Location Selector & User Avatar */}
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.locationSelector}
+            activeOpacity={0.7}
+            onPress={() => router.push('/(tabs)/explore')}>
+            <MapPin size={18} color={CivicCareColors.brandPrimary} />
+            <Text style={styles.locationText}>Mumbai</Text>
+            <ChevronDown size={16} color={CivicCareColors.textSecondary} />
+          </TouchableOpacity>
+
+          <View style={styles.headerRightActions}>
+            <TouchableOpacity
+              style={styles.avatarButton}
+              activeOpacity={0.8}
+              onPress={() => router.push('/(tabs)/profile')}>
+              <Image
+                source={
+                  user?.imageUrl && !user.imageUrl.includes('unsplash')
+                    ? { uri: user.imageUrl }
+                    : require('@/assets/images/default-avatar.png')
+                }
+                style={styles.avatarImage}
+              />
+              <View style={styles.onlineBadge} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <Search size={18} color={CivicCareColors.textTertiary} />
+          <TextInput
+            placeholder="Search for issues near you..."
+            placeholderTextColor={CivicCareColors.textTertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            style={styles.searchInput}
+          />
+        </View>
+
+        {/* Official Civic Hero Banner (Asset 07) */}
+        <View style={styles.heroBannerCard}>
+          <Image
+            source={require('@/assets/civiccare/07_home_screen_hero_banner.png')}
+            style={styles.heroBannerImage}
+            resizeMode="cover"
+          />
+          <View style={styles.heroBannerOverlay}>
+            <Text style={styles.bannerTitle}>Together for a{"\n"}Cleaner, Safer City</Text>
+            <Text style={styles.bannerSubtitle}>Report civic issues and{"\n"}help make a difference.</Text>
+          </View>
+        </View>
+
+        {/* Big Prominent Action Button: Report an Issue */}
+        <TouchableOpacity
+          style={styles.reportActionButton}
+          activeOpacity={0.9}
+          onPress={() => router.push('/report-issue')}>
+          <View style={styles.cameraIconBadge}>
+            <Camera size={20} color="#FFFFFF" />
+          </View>
+          <Text style={styles.reportActionText}>Report an Issue</Text>
+        </TouchableOpacity>
+
+        {/* Issue Categories Grid (9 Authentic Categories) */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Categories</Text>
+          {filterCategory && (
+            <TouchableOpacity onPress={() => setFilterCategory(null)}>
+              <Text style={styles.clearFilterText}>Clear filter</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={styles.categoriesGrid}>
+          {CATEGORIES.map(cat => {
+            const isSelected = filterCategory === cat.name;
+            return (
+              <TouchableOpacity
+                key={cat.id}
+                style={[
+                  styles.categoryCard,
+                  isSelected && styles.categoryCardSelected,
+                ]}
+                activeOpacity={0.75}
+                onPress={() => handleCategoryPress(cat.name)}>
+                <Image
+                  source={cat.image}
+                  style={styles.categoryIconImg}
+                  resizeMode="contain"
+                />
+                <Text
+                  style={[
+                    styles.categoryLabel,
+                    isSelected && styles.categoryLabelSelected,
+                  ]}
+                  numberOfLines={1}>
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Recent Reports Nearby Section */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Recent Reports Nearby</Text>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/reports')}>
+            <Text style={styles.viewAllLink}>View All</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Report Cards Feed — Zero dummy records */}
+        <View style={styles.reportsFeed}>
+          {filteredReports.length === 0 ? (
+            <View style={styles.emptyFeedCard}>
+              <View style={styles.emptyIconCircle}>
+                <CheckCircle2 size={32} color="#16A34A" />
+              </View>
+              <Text style={styles.emptyFeedTitle}>No civic issues found</Text>
+              <Text style={styles.emptyFeedSubtitle}>
+                {filterCategory
+                  ? `No active ${filterCategory} reports found. Tap "Clear filter" to see all reports.`
+                  : 'Your neighborhood looks clear! Tap "Report an Issue" to report a problem.'}
+              </Text>
+              {filterCategory && (
+                <TouchableOpacity
+                  style={styles.clearFilterBtn}
+                  onPress={() => setFilterCategory(null)}>
+                  <Text style={styles.clearFilterBtnText}>Show All Categories</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            filteredReports.map(report => (
+              <TouchableOpacity
+                key={report.id}
+                style={styles.reportCard}
+                activeOpacity={0.85}
+                onPress={() => router.push({ pathname: '/report-details', params: { id: report.id } })}>
+                <Image source={{ uri: report.image_url }} style={styles.reportThumbnail} />
+                
+                <View style={styles.reportInfoColumn}>
+                  <View style={styles.reportTitleRow}>
+                    <Text style={styles.reportTitle} numberOfLines={1}>
+                      {report.title}
+                    </Text>
+                    <View
+                      style={[
+                        styles.statusPill,
+                        report.status === 'Resolved'
+                          ? styles.statusResolved
+                          : styles.statusInProgress,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.statusPillText,
+                          report.status === 'Resolved'
+                            ? styles.statusResolvedText
+                            : styles.statusInProgressText,
+                        ]}>
+                        {report.status}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.reportAddress} numberOfLines={1}>
+                    {report.location_address}
+                  </Text>
+
+                  <View style={styles.reportMetaRow}>
+                    <View style={styles.metaItem}>
+                      <Clock size={12} color={CivicCareColors.textTertiary} />
+                      <Text style={styles.metaText}>{report.time_ago}</Text>
+                    </View>
+                    <Text style={styles.metaDot}>•</Text>
+                    <View style={styles.metaItem}>
+                      <Navigation size={12} color={CivicCareColors.textTertiary} />
+                      <Text style={styles.metaText}>{report.distance_km}</Text>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  scrollContent: {
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.two,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.three,
+  },
+  locationSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: Spacing.two,
+    backgroundColor: CivicCareColors.brandSubtle,
+    borderRadius: BorderRadius.full,
+  },
+  locationText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: CivicCareColors.textMain,
+  },
+  headerRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  avatarButton: {
+    position: 'relative',
+  },
+  avatarImage: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  onlineBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#22C55E',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    backgroundColor: CivicCareColors.bgSubtle,
+    borderWidth: 1,
+    borderColor: CivicCareColors.border,
+    borderRadius: BorderRadius.xl,
+    paddingHorizontal: Spacing.three,
+    height: 46,
+    marginBottom: Spacing.three,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: CivicCareColors.textMain,
+  },
+  heroBannerCard: {
+    position: 'relative',
+    height: 140,
+    borderRadius: BorderRadius.xxl,
+    overflow: 'hidden',
+    marginBottom: Spacing.four,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    backgroundColor: '#EBF4FF',
+  },
+  heroBannerImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
+  heroBannerOverlay: {
+    flex: 1,
+    padding: Spacing.four,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.45)',
+  },
+  bannerTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: CivicCareColors.textMain,
+    lineHeight: 23,
+    marginBottom: 4,
+  },
+  bannerSubtitle: {
+    fontSize: 12,
+    color: CivicCareColors.textSecondary,
+    lineHeight: 16,
+    fontWeight: '500',
+  },
+  reportActionButton: {
+    backgroundColor: CivicCareColors.brandPrimary,
+    height: 52,
+    borderRadius: BorderRadius.xl,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.two,
+    marginBottom: Spacing.four,
+    shadowColor: CivicCareColors.brandPrimary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 14,
+    elevation: 4,
+  },
+  cameraIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reportActionText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.two,
+  },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: CivicCareColors.textMain,
+  },
+  clearFilterText: {
+    fontSize: 13,
+    color: CivicCareColors.brandPrimary,
+    fontWeight: '600',
+  },
+  viewAllLink: {
+    fontSize: 13,
+    color: CivicCareColors.brandPrimary,
+    fontWeight: '600',
+  },
+  categoriesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: Spacing.two + 2,
+    marginBottom: Spacing.four,
+  },
+  categoryCard: {
+    width: (width - Spacing.four * 2 - Spacing.two * 2) / 3,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.xl,
+    paddingVertical: Spacing.two + 4,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    ...Shadows.sm,
+  },
+  categoryCardSelected: {
+    borderColor: CivicCareColors.brandPrimary,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1.5,
+  },
+  categoryIconImg: {
+    width: 38,
+    height: 38,
+    marginBottom: 6,
+  },
+  categoryLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1E293B',
+    textAlign: 'center',
+  },
+  categoryLabelSelected: {
+    color: CivicCareColors.brandPrimary,
+    fontWeight: '800',
+  },
+  reportsFeed: {
+    gap: Spacing.three,
+  },
+  emptyFeedCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.six,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: CivicCareColors.border,
+    marginTop: Spacing.two,
+  },
+  emptyIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#DCFCE7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.three,
+  },
+  emptyFeedTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: CivicCareColors.textMain,
+    marginBottom: 4,
+  },
+  emptyFeedSubtitle: {
+    fontSize: 13,
+    color: CivicCareColors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: Spacing.three,
+  },
+  clearFilterBtn: {
+    backgroundColor: CivicCareColors.brandSubtle,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 8,
+    borderRadius: BorderRadius.lg,
+  },
+  clearFilterBtnText: {
+    color: CivicCareColors.brandPrimary,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  reportCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.two,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    borderWidth: 1,
+    borderColor: CivicCareColors.border,
+    ...Shadows.sm,
+  },
+  reportThumbnail: {
+    width: 76,
+    height: 76,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: '#E2E8F0',
+  },
+  reportInfoColumn: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  reportTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  reportTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: CivicCareColors.textMain,
+    flex: 1,
+    marginRight: 6,
+  },
+  statusPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: BorderRadius.full,
+  },
+  statusPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  statusInProgress: {
+    backgroundColor: CivicCareColors.warningBg,
+  },
+  statusInProgressText: {
+    color: CivicCareColors.warning,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  statusResolved: {
+    backgroundColor: CivicCareColors.successBg,
+  },
+  statusResolvedText: {
+    color: CivicCareColors.success,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  reportAddress: {
+    fontSize: 12,
+    color: CivicCareColors.textSecondary,
+    marginBottom: 6,
+  },
+  reportMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 11,
+    color: CivicCareColors.textTertiary,
+  },
+  metaDot: {
+    fontSize: 11,
+    color: CivicCareColors.textTertiary,
+    marginHorizontal: 2,
+  },
+});

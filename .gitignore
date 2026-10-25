@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+civiccare-app/node_modules/
+
+# Python / AI Backend
+__pycache__/
+ai-backend/__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+
+# Expo & React Native
+.expo/
+civiccare-app/.expo/
+dist/
+web-build/
+civiccare-app/dist/
+civiccare-app/web-build/
+expo-env.d.ts
+civiccare-app/expo-env.d.ts
+
+# Native Builds
+/ios
+/android
+civiccare-app/ios/
+civiccare-app/android/
+
+# Local Environment Variables
+.env*.local
+
+# OS & Editor Files
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Test Images & Presentation Artifacts
+test_ai_images/
+image.png
+CivicCare_Complete_Documentation.zip
+Civic_Issue_Reporting_System_Modules_After_Proposed_System.pptx

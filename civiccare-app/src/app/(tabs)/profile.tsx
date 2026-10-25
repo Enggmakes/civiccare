@@ -81,9 +81,9 @@ export default function ProfileScreen() {
     if (isSignedIn) {
       await signOut();
       Alert.alert('Signed Out', 'You have been signed out of your CivicCare account.');
-      router.replace('/auth');
+      router.replace('/welcome');
     } else {
-      router.push('/auth');
+      router.push('/welcome');
     }
   };
 

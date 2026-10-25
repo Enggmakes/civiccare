@@ -3,13 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
+import { useAppTheme } from '@/services/themeContext';
 import {
   Check,
   Copy,
@@ -21,6 +22,8 @@ import {
 
 export default function ReportSubmittedScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isDark, colors } = useAppTheme();
   const params = useLocalSearchParams<{
     reportId?: string;
     ticketNumber?: string;
@@ -54,8 +57,8 @@ export default function ReportSubmittedScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom + 15 }, isDark && { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <View style={styles.container}>
         {/* Top Spacer */}
         <View style={{ height: 20 }} />
@@ -65,60 +68,60 @@ export default function ReportSubmittedScreen() {
           <View style={styles.successBadgeCircle}>
             <Check size={40} color="#FFFFFF" strokeWidth={3.5} />
           </View>
-          <Text style={styles.headline}>Report Submitted!</Text>
-          <Text style={styles.subtext}>
+          <Text style={[styles.headline, isDark && { color: colors.text }]}>Report Submitted!</Text>
+          <Text style={[styles.subtext, isDark && { color: colors.textSecondary }]}>
             Your issue has been successfully reported and is being processed by AI.
           </Text>
         </View>
 
         {/* Structured Summary Card (Matches Screen 6 in image.png) */}
-        <View style={styles.summaryCard}>
+        <View style={[styles.summaryCard, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
           {/* Row 1: Report ID */}
-          <View style={styles.summaryRow}>
+          <View style={[styles.summaryRow, isDark && { borderBottomColor: colors.border }]}>
             <View style={styles.rowLabelGroup}>
-              <View style={styles.iconBox}>
-                <Text style={styles.idSymbol}>#</Text>
+              <View style={[styles.iconBox, isDark && { backgroundColor: colors.card }]}>
+                <Text style={[styles.idSymbol, isDark && { color: colors.tint }]}>#</Text>
               </View>
               <View>
-                <Text style={styles.rowLabel}>Report ID</Text>
-                <Text style={styles.rowValueHighlight}>{ticketNumber}</Text>
+                <Text style={[styles.rowLabel, isDark && { color: colors.textSecondary }]}>Report ID</Text>
+                <Text style={[styles.rowValueHighlight, isDark && { color: colors.tint }]}>{ticketNumber}</Text>
               </View>
             </View>
             <TouchableOpacity
-              style={styles.copyButton}
+              style={[styles.copyButton, isDark && { backgroundColor: colors.card }]}
               activeOpacity={0.7}
               onPress={handleCopyId}>
               {copied ? (
                 <CheckCircle size={18} color={CivicCareColors.success} />
               ) : (
-                <Copy size={18} color={CivicCareColors.textSecondary} />
+                <Copy size={18} color={isDark ? colors.textSecondary : CivicCareColors.textSecondary} />
               )}
             </TouchableOpacity>
           </View>
 
           {/* Row 2: Detected Category */}
-          <View style={styles.summaryRow}>
+          <View style={[styles.summaryRow, isDark && { borderBottomColor: colors.border }]}>
             <View style={styles.rowLabelGroup}>
-              <View style={[styles.iconBox, { backgroundColor: '#FFEDD5' }]}>
+              <View style={[styles.iconBox, { backgroundColor: isDark ? 'rgba(234, 88, 12, 0.18)' : '#FFEDD5' }]}>
                 <AlertTriangle size={18} color="#EA580C" />
               </View>
               <View>
-                <Text style={styles.rowLabel}>Detected Category</Text>
-                <Text style={styles.rowValue}>{category}</Text>
+                <Text style={[styles.rowLabel, isDark && { color: colors.textSecondary }]}>Detected Category</Text>
+                <Text style={[styles.rowValue, isDark && { color: colors.text }]}>{category}</Text>
               </View>
             </View>
           </View>
 
           {/* Row 3: Severity */}
-          <View style={styles.summaryRow}>
+          <View style={[styles.summaryRow, isDark && { borderBottomColor: colors.border }]}>
             <View style={styles.rowLabelGroup}>
-              <View style={[styles.iconBox, { backgroundColor: '#FEE2E2' }]}>
+              <View style={[styles.iconBox, { backgroundColor: isDark ? 'rgba(220, 38, 38, 0.18)' : '#FEE2E2' }]}>
                 <ShieldAlert size={18} color="#DC2626" />
               </View>
               <View>
-                <Text style={styles.rowLabel}>Severity</Text>
-                <View style={styles.severityBadge}>
-                  <Text style={styles.severityBadgeText}>{severity}</Text>
+                <Text style={[styles.rowLabel, isDark && { color: colors.textSecondary }]}>Severity</Text>
+                <View style={[styles.severityBadge, isDark && { backgroundColor: 'rgba(220, 38, 38, 0.2)' }]}>
+                  <Text style={[styles.severityBadgeText, isDark && { color: '#EF4444' }]}>{severity}</Text>
                 </View>
               </View>
             </View>
@@ -127,12 +130,12 @@ export default function ReportSubmittedScreen() {
           {/* Row 4: Location */}
           <View style={[styles.summaryRow, { borderBottomWidth: 0 }]}>
             <View style={styles.rowLabelGroup}>
-              <View style={[styles.iconBox, { backgroundColor: '#E0F2FE' }]}>
-                <MapPin size={18} color={CivicCareColors.brandPrimary} />
+              <View style={[styles.iconBox, { backgroundColor: isDark ? 'rgba(30, 96, 213, 0.18)' : '#E0F2FE' }]}>
+                <MapPin size={18} color={isDark ? colors.tint : CivicCareColors.brandPrimary} />
               </View>
               <View style={{ flex: 1, paddingRight: Spacing.two }}>
-                <Text style={styles.rowLabel}>Location</Text>
-                <Text style={styles.rowValue} numberOfLines={2}>
+                <Text style={[styles.rowLabel, isDark && { color: colors.textSecondary }]}>Location</Text>
+                <Text style={[styles.rowValue, isDark && { color: colors.text }]} numberOfLines={2}>
                   {address}
                 </Text>
               </View>
@@ -150,14 +153,14 @@ export default function ReportSubmittedScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.secondaryButton}
+            style={[styles.secondaryButton, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
             activeOpacity={0.75}
             onPress={handleSubmitAnother}>
-            <Text style={styles.secondaryButtonText}>Submit Another Report</Text>
+            <Text style={[styles.secondaryButtonText, isDark && { color: colors.text }]}>Submit Another Report</Text>
           </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

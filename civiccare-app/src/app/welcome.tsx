@@ -4,20 +4,22 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Image,
   Dimensions,
   StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { CivicCareColors, Spacing, BorderRadius } from '@/constants/theme';
-
 import { useAuth } from '@/services/auth';
+import { useAppTheme } from '@/services/themeContext';
 
 const { width, height } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isDark, colors } = useAppTheme();
   const { isSignedIn, isLoaded } = useAuth();
 
   React.useEffect(() => {
@@ -27,8 +29,8 @@ export default function WelcomeScreen() {
   }, [isLoaded, isSignedIn]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom + 15 }, isDark && { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <View style={styles.container}>
         {/* Top Logo & Tagline Lockup */}
         <View style={styles.brandHeader}>
@@ -40,7 +42,7 @@ export default function WelcomeScreen() {
         </View>
 
         {/* Central City Highway Background Illustration */}
-        <View style={styles.illustrationCard}>
+        <View style={[styles.illustrationCard, isDark && { backgroundColor: colors.backgroundElement }]}>
           <Image
             source={require('@/assets/civiccare/03_splash_city_background.png')}
             style={styles.cityBgImage}
@@ -61,12 +63,12 @@ export default function WelcomeScreen() {
             style={styles.signInRow}
             activeOpacity={0.7}
             onPress={() => router.replace('/auth')}>
-            <Text style={styles.signInPrompt}>Already have an account? </Text>
-            <Text style={styles.signInLink}>Sign In</Text>
+            <Text style={[styles.signInPrompt, isDark && { color: colors.textSecondary }]}>Already have an account? </Text>
+            <Text style={[styles.signInLink, isDark && { color: colors.tint }]}>Sign In</Text>
           </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

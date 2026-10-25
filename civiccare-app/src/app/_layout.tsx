@@ -9,15 +9,24 @@ import { ThemeProvider as AppThemeProvider, useAppTheme } from '@/services/theme
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-export const unstable_settings = {
-  initialRouteName: 'welcome',
+const PureBlackDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: '#3B82F6',
+    background: '#000000',
+    card: '#121212',
+    text: '#FFFFFF',
+    border: '#343434',
+    notification: '#DC2626',
+  },
 };
 
 function RootNavigationLayout() {
   const { isDark, colors } = useAppTheme();
 
   return (
-    <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={isDark ? PureBlackDarkTheme : DefaultTheme}>
       <View style={[Platform.OS === 'web' ? styles.webContainer : styles.nativeContainer, { backgroundColor: colors.background }]}>
         <View style={[Platform.OS === 'web' ? styles.webShell : styles.nativeContainer, Platform.OS === 'web' && { backgroundColor: colors.backgroundElement }]}>
           <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>

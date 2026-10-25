@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 import { useReports } from '@/services/reportsStore';
+import { useAppTheme } from '@/services/themeContext';
 import {
   Clock,
   Navigation,
@@ -23,6 +24,7 @@ import {
 export default function MyReportsScreen() {
   const router = useRouter();
   const { reports } = useReports();
+  const { isDark, colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<'All' | 'Active' | 'Resolved'>('All');
 
@@ -33,12 +35,12 @@ export default function MyReportsScreen() {
   });
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { paddingTop: insets.top }, isDark && { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       {/* Header */}
-      <View style={styles.headerBar}>
-        <Text style={styles.headerTitle}>My Reports</Text>
+      <View style={[styles.headerBar, isDark && { borderBottomColor: colors.border }]}>
+        <Text style={[styles.headerTitle, isDark && { color: colors.text }]}>My Reports</Text>
         <TouchableOpacity
           style={styles.newReportButton}
           activeOpacity={0.8}
@@ -49,17 +51,23 @@ export default function MyReportsScreen() {
       </View>
 
       {/* Segmented Filter Control */}
-      <View style={styles.segmentedContainer}>
+      <View style={[styles.segmentedContainer, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
         {(['All', 'Active', 'Resolved'] as const).map(tab => (
           <TouchableOpacity
             key={tab}
-            style={[styles.segmentTab, activeTab === tab && styles.segmentTabActive]}
+            style={[
+              styles.segmentTab,
+              activeTab === tab && styles.segmentTabActive,
+              activeTab === tab && isDark && { backgroundColor: colors.card },
+            ]}
             activeOpacity={0.7}
             onPress={() => setActiveTab(tab)}>
             <Text
               style={[
                 styles.segmentText,
+                isDark && { color: colors.textSecondary },
                 activeTab === tab && styles.segmentTextActive,
+                activeTab === tab && isDark && { color: colors.text },
               ]}>
               {tab} (
               {
@@ -79,13 +87,13 @@ export default function MyReportsScreen() {
 
       {/* Reports List */}
       <ScrollView
-        style={styles.scrollView}
+        style={[styles.scrollView, isDark && { backgroundColor: colors.background }]}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 95 }]}
         showsVerticalScrollIndicator={false}>
         {filtered.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>No reports found</Text>
-            <Text style={styles.emptySubtext}>
+            <Text style={[styles.emptyTitle, isDark && { color: colors.text }]}>No reports found</Text>
+            <Text style={[styles.emptySubtext, isDark && { color: colors.textSecondary }]}>
               You have no {activeTab.toLowerCase()} reports at this time.
             </Text>
           </View>
@@ -93,14 +101,14 @@ export default function MyReportsScreen() {
           filtered.map(report => (
             <TouchableOpacity
               key={report.id}
-              style={styles.card}
+              style={[styles.card, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
               activeOpacity={0.8}
               onPress={() => router.push({ pathname: '/report-details', params: { id: report.id } })}>
               <Image source={{ uri: report.image_url }} style={styles.thumbnail} />
 
               <View style={styles.infoCol}>
                 <View style={styles.titleRow}>
-                  <Text style={styles.title} numberOfLines={1}>
+                  <Text style={[styles.title, isDark && { color: colors.text }]} numberOfLines={1}>
                     {report.title}
                   </Text>
                   <View
@@ -118,25 +126,25 @@ export default function MyReportsScreen() {
                   </View>
                 </View>
 
-                <Text style={styles.ticketNum}>{report.ticket_number}</Text>
-                <Text style={styles.address} numberOfLines={1}>
+                <Text style={[styles.ticketNum, isDark && { color: colors.tint }]}>{report.ticket_number}</Text>
+                <Text style={[styles.address, isDark && { color: colors.textSecondary }]} numberOfLines={1}>
                   {report.location_address}
                 </Text>
 
                 <View style={styles.metaRow}>
                   <View style={styles.metaItem}>
-                    <Clock size={12} color={CivicCareColors.textTertiary} />
-                    <Text style={styles.metaText}>{report.time_ago}</Text>
+                    <Clock size={12} color={isDark ? colors.textTertiary : CivicCareColors.textTertiary} />
+                    <Text style={[styles.metaText, isDark && { color: colors.textTertiary }]}>{report.time_ago}</Text>
                   </View>
-                  <Text style={styles.metaDot}>•</Text>
+                  <Text style={[styles.metaDot, isDark && { color: colors.border }]}>•</Text>
                   <View style={styles.metaItem}>
-                    <Navigation size={12} color={CivicCareColors.textTertiary} />
-                    <Text style={styles.metaText}>{report.distance_km}</Text>
+                    <Navigation size={12} color={isDark ? colors.textTertiary : CivicCareColors.textTertiary} />
+                    <Text style={[styles.metaText, isDark && { color: colors.textTertiary }]}>{report.distance_km}</Text>
                   </View>
                 </View>
               </View>
 
-              <ChevronRight size={18} color={CivicCareColors.textTertiary} />
+              <ChevronRight size={18} color={isDark ? colors.textTertiary : CivicCareColors.textTertiary} />
             </TouchableOpacity>
           ))
         )}

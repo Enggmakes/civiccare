@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 import { useReports } from '@/services/reportsStore';
+import { useAppTheme } from '@/services/themeContext';
 import { CivicReportItem } from '@/services/supabase';
 import {
   MapPin,
@@ -30,6 +31,7 @@ const { width, height } = Dimensions.get('window');
 export default function NearbyMapScreen() {
   const router = useRouter();
   const { reports } = useReports();
+  const { isDark, colors } = useAppTheme();
   const webViewRef = useRef<any>(null);
 
   const [categoryFilter, setCategoryFilter] = useState('All');
@@ -115,7 +117,7 @@ export default function NearbyMapScreen() {
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     * { -webkit-tap-highlight-color: transparent; }
-    body, html, #map { margin: 0; padding: 0; width: 100%; height: 100%; background: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    body, html, #map { margin: 0; padding: 0; width: 100%; height: 100%; background: ${isDark ? '#000000' : '#F8FAFC'}; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
     .custom-pin-marker {
       background: transparent !important;
       border: none !important;
@@ -178,10 +180,14 @@ export default function NearbyMapScreen() {
       maxZoom: 20
     }).setView([${centerLat}, ${centerLng}], 14);
 
-    // High-resolution OpenStreetMap tiles (Full coverage in India down to street level, no 'not available' placeholders)
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    var tileUrl = ${isDark}
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+    L.tileLayer(tileUrl, {
       maxZoom: 20,
       maxNativeZoom: 19,
+      subdomains: 'abcd',
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
@@ -241,7 +247,7 @@ export default function NearbyMapScreen() {
 </body>
 </html>
     `;
-  }, [centerLat, centerLng, markersJson]);
+  }, [centerLat, centerLng, markersJson, isDark]);
 
   const handleRecenter = () => {
     if (webViewRef.current && selectedReport) {
@@ -254,24 +260,28 @@ export default function NearbyMapScreen() {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { paddingTop: insets.top }, isDark && { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       {/* Top Filter Bar */}
-      <View style={styles.topFilterBar}>
+      <View style={[styles.topFilterBar, isDark && { backgroundColor: colors.backgroundElement, borderBottomColor: colors.border }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
           {['All', 'Pothole', 'Garbage', 'Streetlight', 'Water Leak', 'Broken Road'].map(cat => (
             <TouchableOpacity
               key={cat}
               style={[
                 styles.filterChip,
+                isDark && { backgroundColor: colors.card, borderColor: colors.border },
                 categoryFilter === cat && styles.filterChipActive,
+                categoryFilter === cat && isDark && { backgroundColor: colors.tint, borderColor: colors.tint },
               ]}
               onPress={() => setCategoryFilter(cat)}>
               <Text
                 style={[
                   styles.filterChipText,
+                  isDark && { color: colors.textSecondary },
                   categoryFilter === cat && styles.filterChipTextActive,
+                  categoryFilter === cat && isDark && { color: '#FFFFFF' },
                 ]}>
                 {cat}
               </Text>
@@ -281,7 +291,7 @@ export default function NearbyMapScreen() {
       </View>
 
       {/* Real Interactive Map Canvas */}
-      <View style={styles.mapCanvas}>
+      <View style={[styles.mapCanvas, isDark && { backgroundColor: colors.background }]}>
         {Platform.OS === 'web' ? (
           <iframe
             srcDoc={leafletHtml}
@@ -291,7 +301,7 @@ export default function NearbyMapScreen() {
           <WebView
             ref={webViewRef}
             source={{ html: leafletHtml }}
-            style={styles.webView}
+            style={[styles.webView, isDark && { backgroundColor: colors.background }]}
             onMessage={handleMapMessage}
             scrollEnabled={false}
             javaScriptEnabled={true}
@@ -302,16 +312,16 @@ export default function NearbyMapScreen() {
 
         {/* Floating Recenter GPS Action Button */}
         <TouchableOpacity
-          style={styles.recenterButton}
+          style={[styles.recenterButton, isDark && { backgroundColor: colors.card, borderColor: colors.border }]}
           activeOpacity={0.85}
           onPress={handleRecenter}>
-          <Navigation size={20} color={CivicCareColors.brandPrimary} />
+          <Navigation size={20} color={isDark ? colors.tint : CivicCareColors.brandPrimary} />
         </TouchableOpacity>
 
         {/* Selected Incident Popup Card with Complete Rich Metadata */}
         {selectedReport && (
           <View style={[styles.popupCardContainer, { bottom: insets.bottom + 80 }]}>
-            <View style={styles.popupCard}>
+            <View style={[styles.popupCard, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
               {/* Report Thumbnail Image */}
               <Image
                 source={{
@@ -325,7 +335,7 @@ export default function NearbyMapScreen() {
               {/* Rich Metadata Section */}
               <View style={styles.popupDetails}>
                 <View style={styles.popupTitleRow}>
-                  <Text style={styles.popupTitle} numberOfLines={1}>
+                  <Text style={[styles.popupTitle, isDark && { color: colors.text }]} numberOfLines={1}>
                     {selectedReport.title}
                   </Text>
                   <View
@@ -352,12 +362,12 @@ export default function NearbyMapScreen() {
                 </View>
 
                 {/* Ticket Number & Category */}
-                <Text style={styles.popupTicket}>
+                <Text style={[styles.popupTicket, isDark && { color: colors.tint }]}>
                   {selectedReport.ticket_number} • {selectedReport.category}
                 </Text>
 
                 {/* Location Address & Timestamp */}
-                <Text style={styles.popupAddress} numberOfLines={1}>
+                <Text style={[styles.popupAddress, isDark && { color: colors.textSecondary }]} numberOfLines={1}>
                   {selectedReport.location_address || 'Palghar, Maharashtra'} • {selectedReport.time_ago || 'Recently'}
                 </Text>
 

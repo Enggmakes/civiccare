@@ -15,7 +15,9 @@ import {
   Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
+import { useAppTheme } from '@/services/themeContext';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import {
@@ -34,6 +36,8 @@ const { width } = Dimensions.get('window');
 
 export default function ReportIssueScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isDark, colors } = useAppTheme();
   
   // Real dynamic states - completely empty by default
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -214,31 +218,31 @@ export default function ReportIssueScreen() {
   const mapTileUrl = `https://staticmap.openstreetmap.de/staticmap.php?center=${latitude},${longitude}&zoom=15&size=600x240&markers=${latitude},${longitude},red-pushpin`;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.safeArea, { paddingTop: insets.top }, isDark && { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       
       {/* Top Navigation Bar */}
-      <View style={styles.navBar}>
+      <View style={[styles.navBar, isDark && { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
         <TouchableOpacity
           style={styles.backButton}
           activeOpacity={0.7}
           onPress={() => router.back()}>
-          <ArrowLeft size={22} color={CivicCareColors.textMain} />
+          <ArrowLeft size={22} color={isDark ? colors.text : CivicCareColors.textMain} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>Report Issue</Text>
+        <Text style={[styles.navTitle, isDark && { color: colors.text }]}>Report Issue</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        style={[styles.scrollView, isDark && { backgroundColor: colors.background }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 60 }]}
         showsVerticalScrollIndicator={false}>
         
         {/* Photo Evidence Section */}
-        <Text style={styles.fieldLabel}>Photo Evidence (Required)</Text>
+        <Text style={[styles.fieldLabel, isDark && { color: colors.text }]}>Photo Evidence (Required)</Text>
         
         {photoUri ? (
-          <View style={styles.photoAttachedContainer}>
+          <View style={[styles.photoAttachedContainer, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
             <Image source={{ uri: photoUri }} style={styles.photoPreviewFull} />
             <TouchableOpacity
               style={styles.deletePhotoBadge}
@@ -267,25 +271,25 @@ export default function ReportIssueScreen() {
           <View style={styles.emptyPhotoBox}>
             <View style={styles.photoChoiceRow}>
               <TouchableOpacity
-                style={styles.photoActionCard}
+                style={[styles.photoActionCard, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
                 activeOpacity={0.8}
                 onPress={handleTakePhoto}>
-                <View style={[styles.photoIconCircle, { backgroundColor: '#EFF6FF' }]}>
-                  <Camera size={26} color={CivicCareColors.brandPrimary} />
+                <View style={[styles.photoIconCircle, { backgroundColor: isDark ? 'rgba(30, 96, 213, 0.18)' : '#EFF6FF' }]}>
+                  <Camera size={26} color={isDark ? colors.tint : CivicCareColors.brandPrimary} />
                 </View>
-                <Text style={styles.photoActionTitle}>Take Live Photo</Text>
-                <Text style={styles.photoActionSub}>Use phone camera</Text>
+                <Text style={[styles.photoActionTitle, isDark && { color: colors.text }]}>Take Live Photo</Text>
+                <Text style={[styles.photoActionSub, isDark && { color: colors.textSecondary }]}>Use phone camera</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.photoActionCard}
+                style={[styles.photoActionCard, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
                 activeOpacity={0.8}
                 onPress={handlePickFromGallery}>
-                <View style={[styles.photoIconCircle, { backgroundColor: '#F0FDF4' }]}>
+                <View style={[styles.photoIconCircle, { backgroundColor: isDark ? 'rgba(22, 163, 74, 0.18)' : '#F0FDF4' }]}>
                   <ImageIcon size={26} color="#16A34A" />
                 </View>
-                <Text style={styles.photoActionTitle}>Choose Photo</Text>
-                <Text style={styles.photoActionSub}>Upload from gallery</Text>
+                <Text style={[styles.photoActionTitle, isDark && { color: colors.text }]}>Choose Photo</Text>
+                <Text style={[styles.photoActionSub, isDark && { color: colors.textSecondary }]}>Upload from gallery</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -293,19 +297,19 @@ export default function ReportIssueScreen() {
 
         {/* Issue Description Section */}
         <View style={styles.sectionContainer}>
-          <Text style={styles.fieldLabel}>Issue Description</Text>
-          <View style={styles.textAreaWrapper}>
+          <Text style={[styles.fieldLabel, isDark && { color: colors.text }]}>Issue Description</Text>
+          <View style={[styles.textAreaWrapper, isDark && { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
             <TextInput
-              style={styles.textArea}
+              style={[styles.textArea, isDark && { color: colors.text }]}
               placeholder="Describe the issue, defect severity, and nearby landmarks (e.g. Deep pothole near city mall causing traffic danger)..."
-              placeholderTextColor={CivicCareColors.textTertiary}
+              placeholderTextColor={isDark ? colors.textTertiary : CivicCareColors.textTertiary}
               multiline
               maxLength={300}
               value={description}
               onChangeText={setDescription}
               textAlignVertical="top"
             />
-            <Text style={styles.charCounter}>{description.length}/300</Text>
+            <Text style={[styles.charCounter, isDark && { color: colors.textTertiary }]}>{description.length}/300</Text>
           </View>
         </View>
 
@@ -313,26 +317,26 @@ export default function ReportIssueScreen() {
         <View style={styles.sectionContainer}>
           <View style={styles.locationHeaderRow}>
             <View style={styles.locationTitleRow}>
-              <Compass size={18} color={CivicCareColors.brandPrimary} />
-              <Text style={styles.fieldLabel}>Auto-detected Location</Text>
+              <Compass size={18} color={isDark ? colors.tint : CivicCareColors.brandPrimary} />
+              <Text style={[styles.fieldLabel, isDark && { color: colors.text }]}>Auto-detected Location</Text>
             </View>
             <TouchableOpacity
               style={styles.refreshLocButton}
               activeOpacity={0.7}
               onPress={fetchCurrentLocation}>
               {isLocating ? (
-                <ActivityIndicator size="small" color={CivicCareColors.brandPrimary} />
+                <ActivityIndicator size="small" color={isDark ? colors.tint : CivicCareColors.brandPrimary} />
               ) : (
                 <View style={styles.refreshInner}>
-                  <RefreshCw size={13} color={CivicCareColors.brandPrimary} />
-                  <Text style={styles.refreshText}>GPS Sync</Text>
+                  <RefreshCw size={13} color={isDark ? colors.tint : CivicCareColors.brandPrimary} />
+                  <Text style={[styles.refreshText, isDark && { color: colors.tint }]}>GPS Sync</Text>
                 </View>
               )}
             </TouchableOpacity>
           </View>
 
           {/* Real Map Preview Card */}
-          <View style={styles.mapCard}>
+          <View style={[styles.mapCard, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
             <View style={styles.mapCanvasWrapper}>
               <Image
                 source={{ uri: mapTileUrl }}
@@ -343,7 +347,7 @@ export default function ReportIssueScreen() {
                 <MapPin size={34} color="#DC2626" fill="#FEE2E2" />
                 <View style={styles.pinShadow} />
               </View>
-              <View style={styles.gpsCoordsBadge}>
+              <View style={[styles.gpsCoordsBadge, isDark && { backgroundColor: 'rgba(0,0,0,0.75)' }]}>
                 <Text style={styles.gpsCoordsText}>
                   {latitude.toFixed(4)}, {longitude.toFixed(4)}
                 </Text>
@@ -351,28 +355,29 @@ export default function ReportIssueScreen() {
             </View>
 
             {/* Address Row with Change / Edit Action */}
-            <View style={styles.addressRow}>
+            <View style={[styles.addressRow, isDark && { borderTopColor: colors.border }]}>
               <View style={styles.addressTextWrapper}>
-                <MapPin size={16} color={CivicCareColors.brandPrimary} style={{ marginTop: 2 }} />
-                <Text style={styles.addressText}>{address}</Text>
+                <MapPin size={16} color={isDark ? colors.tint : CivicCareColors.brandPrimary} style={{ marginTop: 2 }} />
+                <Text style={[styles.addressText, isDark && { color: colors.text }]}>{address}</Text>
               </View>
               <TouchableOpacity
-                style={styles.changeAddressButton}
+                style={[styles.changeAddressButton, isDark && { backgroundColor: colors.card, borderColor: colors.border }]}
                 onPress={() => {
                   setManualAddressInput(address);
                   setIsCustomAddress(!isCustomAddress);
                 }}>
-                <Text style={styles.changeAddressText}>
+                <Text style={[styles.changeAddressText, isDark && { color: colors.tint }]}>
                   {isCustomAddress ? 'Cancel' : 'Change'}
                 </Text>
               </TouchableOpacity>
             </View>
 
             {isCustomAddress && (
-              <View style={styles.customAddressBox}>
+              <View style={[styles.customAddressBox, isDark && { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
                 <TextInput
-                  style={styles.customAddressInput}
+                  style={[styles.customAddressInput, isDark && { color: colors.text }]}
                   placeholder="Enter street, landmark, or ward name..."
+                  placeholderTextColor={isDark ? colors.textTertiary : CivicCareColors.textTertiary}
                   value={manualAddressInput}
                   onChangeText={setManualAddressInput}
                 />
@@ -401,7 +406,7 @@ export default function ReportIssueScreen() {
 
         <View style={{ height: 60 }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

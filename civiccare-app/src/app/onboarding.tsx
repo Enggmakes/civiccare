@@ -4,13 +4,14 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Image,
   Dimensions,
   StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
+import { useAppTheme } from '@/services/themeContext';
 import { ArrowRight } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
@@ -38,6 +39,8 @@ const ONBOARDING_SLIDES = [
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isDark, colors } = useAppTheme();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const handleNext = () => {
@@ -56,14 +59,14 @@ export default function OnboardingScreen() {
   const isLastSlide = currentSlide === ONBOARDING_SLIDES.length - 1;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom + 15 }, isDark && { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <View style={styles.container}>
         {/* Top Header with Skip Button */}
         <View style={styles.headerRow}>
           <View style={{ width: 40 }} />
           <TouchableOpacity activeOpacity={0.7} onPress={handleSkip} style={styles.skipButton}>
-            <Text style={styles.skipText}>Skip</Text>
+            <Text style={[styles.skipText, isDark && { color: colors.textSecondary }]}>Skip</Text>
           </TouchableOpacity>
         </View>
 
@@ -78,8 +81,8 @@ export default function OnboardingScreen() {
 
         {/* Text Content */}
         <View style={styles.contentSection}>
-          <Text style={styles.titleText}>{slide.title}</Text>
-          <Text style={styles.descriptionText}>{slide.description}</Text>
+          <Text style={[styles.titleText, isDark && { color: colors.text }]}>{slide.title}</Text>
+          <Text style={[styles.descriptionText, isDark && { color: colors.textSecondary }]}>{slide.description}</Text>
 
           {/* Pagination Dots (4 dots matching design system) */}
           <View style={styles.dotsRow}>
@@ -88,7 +91,9 @@ export default function OnboardingScreen() {
                 key={dotIdx}
                 style={[
                   styles.dot,
-                  currentSlide === dotIdx ? styles.activeDot : styles.inactiveDot,
+                  currentSlide === dotIdx
+                    ? styles.activeDot
+                    : [styles.inactiveDot, isDark && { backgroundColor: colors.border }],
                 ]}
               />
             ))}
@@ -117,7 +122,7 @@ export default function OnboardingScreen() {
           )}
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -44,22 +44,26 @@ export const Colors = {
   light: {
     text: CivicCareColors.textMain,
     textSecondary: CivicCareColors.textSecondary,
-    background: CivicCareColors.bgSubtle,
-    backgroundElement: CivicCareColors.bgCanvas,
+    textTertiary: CivicCareColors.textTertiary,
+    background: '#F8FAFC',
+    backgroundElement: '#FFFFFF',
     backgroundSelected: CivicCareColors.brandSubtle,
     tint: CivicCareColors.brandPrimary,
     border: CivicCareColors.border,
-    card: CivicCareColors.bgCard,
+    card: '#FFFFFF',
+    inputBg: '#F1F5F9',
   },
   dark: {
-    text: '#F8FAFC',
-    textSecondary: '#94A3B8',
-    background: '#0B0F19',
-    backgroundElement: '#131B2E',
-    backgroundSelected: '#1E293B',
+    text: '#FFFFFF',
+    textSecondary: '#A3A3A3',
+    textTertiary: '#737373',
+    background: '#000000', // Pure black OLED
+    backgroundElement: '#121212', // Pure dark surface
+    backgroundSelected: '#262626',
     tint: '#3B82F6',
-    border: '#1E293B',
-    card: '#131B2E',
+    border: '#343434', // User specified #343434
+    card: '#161616',
+    inputBg: '#1E1E1E',
   },
 } as const;
 

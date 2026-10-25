@@ -8,12 +8,14 @@ type ThemeMode = 'light' | 'dark';
 export type ThemePalette = {
   text: string;
   textSecondary: string;
+  textTertiary: string;
   background: string;
   backgroundElement: string;
   backgroundSelected: string;
   tint: string;
   border: string;
   card: string;
+  inputBg: string;
 };
 
 interface ThemeContextType {

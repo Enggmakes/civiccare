@@ -13,8 +13,10 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 import { useReports } from '@/services/reportsStore';
+import { useAppTheme } from '@/services/themeContext';
 import { uploadReportImageToSupabase } from '@/services/storageUploader';
 import { ArrowLeft, Cpu, CheckCircle2, Circle } from 'lucide-react-native';
 
@@ -26,6 +28,8 @@ interface StepItem {
 
 export default function AIAnalysisScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isDark, colors } = useAppTheme();
   const params = useLocalSearchParams<{
     photoUri?: string;
     photoBase64?: string;
@@ -196,18 +200,18 @@ export default function AIAnalysisScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.safeArea, { paddingTop: insets.top }, isDark && { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       {/* Top Nav */}
-      <View style={styles.navBar}>
+      <View style={[styles.navBar, isDark && { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
         <TouchableOpacity
           style={styles.backButton}
           activeOpacity={0.7}
           onPress={() => router.back()}>
-          <ArrowLeft size={22} color={CivicCareColors.textMain} />
+          <ArrowLeft size={22} color={isDark ? colors.text : CivicCareColors.textMain} />
         </TouchableOpacity>
-        <Text style={styles.navTitle}>AI Analysis</Text>
+        <Text style={[styles.navTitle, isDark && { color: colors.text }]}>AI Analysis</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -221,40 +225,40 @@ export default function AIAnalysisScreen() {
                 transform: [{ scale: pulseAnim }],
               },
             ]}>
-            <View style={styles.iconCircle}>
-              <Cpu size={42} color={CivicCareColors.brandPrimary} strokeWidth={2.2} />
+            <View style={[styles.iconCircle, isDark && { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Cpu size={42} color={isDark ? colors.tint : CivicCareColors.brandPrimary} strokeWidth={2.2} />
             </View>
           </Animated.View>
         </View>
 
         {/* Headings */}
         <View style={styles.headerTextSection}>
-          <Text style={styles.mainTitle}>Analyzing your report...</Text>
-          <Text style={styles.subTitle}>
+          <Text style={[styles.mainTitle, isDark && { color: colors.text }]}>Analyzing your report...</Text>
+          <Text style={[styles.subTitle, isDark && { color: colors.textSecondary }]}>
             Our AI is analyzing the image and description to detect the issue type and severity.
           </Text>
         </View>
 
         {/* Processing Checklist */}
-        <View style={styles.checklistCard}>
+        <View style={[styles.checklistCard, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
           {steps.map(step => (
-            <View key={step.id} style={styles.checklistItem}>
-              <Text style={styles.stepLabel}>{step.label}</Text>
+            <View key={step.id} style={[styles.checklistItem, isDark && { borderBottomColor: colors.border }]}>
+              <Text style={[styles.stepLabel, isDark && { color: colors.text }]}>{step.label}</Text>
               
               <View style={styles.stepIndicator}>
                 {step.status === 'completed' ? (
-                  <CheckCircle2 size={22} color={CivicCareColors.success} fill="#DCFCE7" />
+                  <CheckCircle2 size={22} color={CivicCareColors.success} fill={isDark ? 'rgba(22, 163, 74, 0.25)' : '#DCFCE7'} />
                 ) : step.status === 'processing' ? (
-                  <ActivityIndicator size="small" color={CivicCareColors.brandPrimary} />
+                  <ActivityIndicator size="small" color={isDark ? colors.tint : CivicCareColors.brandPrimary} />
                 ) : (
-                  <Circle size={22} color="#CBD5E1" strokeWidth={1.5} />
+                  <Circle size={22} color={isDark ? colors.border : '#CBD5E1'} strokeWidth={1.5} />
                 )}
               </View>
             </View>
           ))}
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   TextInput,
   TouchableOpacity,
@@ -13,9 +12,11 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 import { useAuth } from '@/services/auth';
+import { useAppTheme } from '@/services/themeContext';
 import {
   Mail,
   Lock,
@@ -28,6 +29,8 @@ import {
 
 export default function AuthScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isDark, colors } = useAppTheme();
   const { signIn, signUp } = useAuth();
 
   const [isSignUp, setIsSignUp] = useState(false);
@@ -103,14 +106,14 @@ export default function AuthScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.safeArea, { paddingTop: insets.top }, isDark && { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}>
         <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
+          style={[styles.scrollView, isDark && { backgroundColor: colors.background }]}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
           showsVerticalScrollIndicator={false}>
           
           {/* Header Brand Logo */}
@@ -120,11 +123,11 @@ export default function AuthScreen() {
               style={styles.logoImage}
               resizeMode="contain"
             />
-            <Text style={styles.brandTitle}>CivicCare</Text>
-            <Text style={styles.welcomeHeading}>
+            <Text style={[styles.brandTitle, isDark && { color: colors.text }]}>CivicCare</Text>
+            <Text style={[styles.welcomeHeading, isDark && { color: colors.text }]}>
               {isSignUp ? 'Create Account' : 'Welcome Back'}
             </Text>
-            <Text style={styles.welcomeSubtext}>
+            <Text style={[styles.welcomeSubtext, isDark && { color: colors.textSecondary }]}>
               {isSignUp
                 ? 'Join CivicCare to report and improve your city.'
                 : 'Sign in to continue'}
@@ -136,13 +139,13 @@ export default function AuthScreen() {
             {/* Full Name (Sign Up Only) */}
             {isSignUp && (
               <View style={styles.inputGroup}>
-                <Text style={styles.fieldLabel}>Full Name</Text>
-                <View style={styles.inputWrapper}>
-                  <User size={18} color={CivicCareColors.textTertiary} style={styles.inputIcon} />
+                <Text style={[styles.fieldLabel, isDark && { color: colors.text }]}>Full Name</Text>
+                <View style={[styles.inputWrapper, isDark && { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+                  <User size={18} color={isDark ? colors.textTertiary : CivicCareColors.textTertiary} style={styles.inputIcon} />
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, isDark && { color: colors.text }]}
                     placeholder="Enter your full name"
-                    placeholderTextColor={CivicCareColors.textTertiary}
+                    placeholderTextColor={isDark ? colors.textTertiary : CivicCareColors.textTertiary}
                     value={fullName}
                     onChangeText={setFullName}
                   />
@@ -152,13 +155,13 @@ export default function AuthScreen() {
 
             {/* Email Address */}
             <View style={styles.inputGroup}>
-              <Text style={styles.fieldLabel}>Email Address</Text>
-              <View style={styles.inputWrapper}>
-                <Mail size={18} color={CivicCareColors.textTertiary} style={styles.inputIcon} />
+              <Text style={[styles.fieldLabel, isDark && { color: colors.text }]}>Email Address</Text>
+              <View style={[styles.inputWrapper, isDark && { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+                <Mail size={18} color={isDark ? colors.textTertiary : CivicCareColors.textTertiary} style={styles.inputIcon} />
                 <TextInput
-                  style={styles.textInput}
+                  style={[styles.textInput, isDark && { color: colors.text }]}
                   placeholder="name@example.com"
-                  placeholderTextColor={CivicCareColors.textTertiary}
+                  placeholderTextColor={isDark ? colors.textTertiary : CivicCareColors.textTertiary}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   value={email}
@@ -170,13 +173,13 @@ export default function AuthScreen() {
             {/* Mobile Number (Separate Input for Supabase phone_number Column) */}
             {isSignUp && (
               <View style={styles.inputGroup}>
-                <Text style={styles.fieldLabel}>Mobile Number</Text>
-                <View style={styles.inputWrapper}>
-                  <Phone size={18} color={CivicCareColors.textTertiary} style={styles.inputIcon} />
+                <Text style={[styles.fieldLabel, isDark && { color: colors.text }]}>Mobile Number</Text>
+                <View style={[styles.inputWrapper, isDark && { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+                  <Phone size={18} color={isDark ? colors.textTertiary : CivicCareColors.textTertiary} style={styles.inputIcon} />
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, isDark && { color: colors.text }]}
                     placeholder="+91 98201 12345"
-                    placeholderTextColor={CivicCareColors.textTertiary}
+                    placeholderTextColor={isDark ? colors.textTertiary : CivicCareColors.textTertiary}
                     keyboardType="phone-pad"
                     value={phone}
                     onChangeText={setPhone}
@@ -188,13 +191,13 @@ export default function AuthScreen() {
             {/* Municipal Ward (Sign Up Only) */}
             {isSignUp && (
               <View style={styles.inputGroup}>
-                <Text style={styles.fieldLabel}>Municipal Ward</Text>
-                <View style={styles.inputWrapper}>
-                  <MapPin size={18} color={CivicCareColors.textTertiary} style={styles.inputIcon} />
+                <Text style={[styles.fieldLabel, isDark && { color: colors.text }]}>Municipal Ward</Text>
+                <View style={[styles.inputWrapper, isDark && { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+                  <MapPin size={18} color={isDark ? colors.textTertiary : CivicCareColors.textTertiary} style={styles.inputIcon} />
                   <TextInput
-                    style={styles.textInput}
+                    style={[styles.textInput, isDark && { color: colors.text }]}
                     placeholder="e.g. Ward K-West (Andheri West)"
-                    placeholderTextColor={CivicCareColors.textTertiary}
+                    placeholderTextColor={isDark ? colors.textTertiary : CivicCareColors.textTertiary}
                     value={ward}
                     onChangeText={setWard}
                   />
@@ -204,13 +207,13 @@ export default function AuthScreen() {
 
             {/* Password */}
             <View style={styles.inputGroup}>
-              <Text style={styles.fieldLabel}>Password</Text>
-              <View style={styles.inputWrapper}>
-                <Lock size={18} color={CivicCareColors.textTertiary} style={styles.inputIcon} />
+              <Text style={[styles.fieldLabel, isDark && { color: colors.text }]}>Password</Text>
+              <View style={[styles.inputWrapper, isDark && { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+                <Lock size={18} color={isDark ? colors.textTertiary : CivicCareColors.textTertiary} style={styles.inputIcon} />
                 <TextInput
-                  style={styles.textInput}
+                  style={[styles.textInput, isDark && { color: colors.text }]}
                   placeholder={isSignUp ? 'Create a password (min 6 chars)' : 'Enter your password'}
-                  placeholderTextColor={CivicCareColors.textTertiary}
+                  placeholderTextColor={isDark ? colors.textTertiary : CivicCareColors.textTertiary}
                   secureTextEntry={!showPassword}
                   value={password}
                   onChangeText={setPassword}
@@ -219,9 +222,9 @@ export default function AuthScreen() {
                   style={styles.eyeButton}
                   onPress={() => setShowPassword(!showPassword)}>
                   {showPassword ? (
-                    <EyeOff size={18} color={CivicCareColors.textTertiary} />
+                    <EyeOff size={18} color={isDark ? colors.textTertiary : CivicCareColors.textTertiary} />
                   ) : (
-                    <Eye size={18} color={CivicCareColors.textTertiary} />
+                    <Eye size={18} color={isDark ? colors.textTertiary : CivicCareColors.textTertiary} />
                   )}
                 </TouchableOpacity>
               </View>
@@ -232,7 +235,7 @@ export default function AuthScreen() {
               <TouchableOpacity
                 style={styles.forgotPasswordRow}
                 onPress={() => Alert.alert('Password Reset', 'Password reset instructions have been sent to your registered email.')}>
-                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                <Text style={[styles.forgotPasswordText, isDark && { color: colors.tint }]}>Forgot Password?</Text>
               </TouchableOpacity>
             )}
 
@@ -248,11 +251,11 @@ export default function AuthScreen() {
 
             {/* Sign Up / Sign In Toggle Footer (Zero Mocked Social Buttons) */}
             <View style={styles.toggleFooter}>
-              <Text style={styles.togglePrompt}>
+              <Text style={[styles.togglePrompt, isDark && { color: colors.textSecondary }]}>
                 {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
               </Text>
               <TouchableOpacity onPress={() => setIsSignUp(!isSignUp)}>
-                <Text style={styles.toggleActionText}>
+                <Text style={[styles.toggleActionText, isDark && { color: colors.tint }]}>
                   {isSignUp ? 'Sign In' : 'Sign Up'}
                 </Text>
               </TouchableOpacity>
@@ -260,7 +263,7 @@ export default function AuthScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 

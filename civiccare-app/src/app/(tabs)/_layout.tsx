@@ -1,14 +1,17 @@
 import React from 'react';
 import { NativeTabs } from 'expo-router/native-tabs';
 import { CivicCareColors } from '@/constants/theme';
+import { useAppTheme } from '@/services/themeContext';
 
 export default function TabsLayout() {
+  const { isDark } = useAppTheme();
+
   return (
     <NativeTabs
-      tintColor={CivicCareColors.brandPrimary}
+      tintColor={isDark ? '#3B82F6' : CivicCareColors.brandPrimary}
       iconColor={{
-        selected: CivicCareColors.brandPrimary,
-        default: '#64748B',
+        selected: isDark ? '#3B82F6' : CivicCareColors.brandPrimary,
+        default: isDark ? '#888888' : '#64748B',
       }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   ScrollView,
   Image,
@@ -11,9 +10,11 @@ import {
   Dimensions,
   Share,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 import { useReports } from '@/services/reportsStore';
+import { useAppTheme } from '@/services/themeContext';
 import {
   ArrowLeft,
   Share2,
@@ -29,21 +30,23 @@ const { width } = Dimensions.get('window');
 
 export default function ReportDetailsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ id?: string }>();
   const { getReportById } = useReports();
+  const { isDark, colors } = useAppTheme();
 
   const report = getReportById(params.id || 'rep_1026') || getReportById('rep_1026');
 
   if (!report) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.safeArea, { paddingTop: insets.top }, isDark && { backgroundColor: colors.background }]}>
         <View style={styles.notFoundContainer}>
-          <Text style={styles.notFoundText}>Report not found</Text>
+          <Text style={[styles.notFoundText, isDark && { color: colors.text }]}>Report not found</Text>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Text style={{ color: CivicCareColors.brandPrimary }}>Go Back</Text>
+            <Text style={{ color: colors.tint }}>Go Back</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -58,31 +61,31 @@ export default function ReportDetailsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.safeArea, { paddingTop: insets.top }, isDark && { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
       {/* Top Navigation */}
-      <View style={styles.navBar}>
+      <View style={[styles.navBar, isDark && { borderBottomColor: colors.border, backgroundColor: colors.background }]}>
         <TouchableOpacity
           style={styles.navIconButton}
           activeOpacity={0.7}
           onPress={() => router.back()}>
-          <ArrowLeft size={22} color={CivicCareColors.textMain} />
+          <ArrowLeft size={22} color={isDark ? colors.text : CivicCareColors.textMain} />
         </TouchableOpacity>
 
-        <Text style={styles.navTitle}>Report Details</Text>
+        <Text style={[styles.navTitle, isDark && { color: colors.text }]}>Report Details</Text>
 
         <TouchableOpacity
           style={styles.navIconButton}
           activeOpacity={0.7}
           onPress={handleShare}>
-          <Share2 size={20} color={CivicCareColors.textMain} />
+          <Share2 size={20} color={isDark ? colors.text : CivicCareColors.textMain} />
         </TouchableOpacity>
       </View>
 
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        style={[styles.scrollView, isDark && { backgroundColor: colors.background }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}>
         
         {/* Large Photo Header with Floating Status Pill */}
@@ -110,21 +113,21 @@ export default function ReportDetailsScreen() {
 
         {/* Title & Ticket Number */}
         <View style={styles.titleSection}>
-          <Text style={styles.issueTitle}>{report.title}</Text>
-          <Text style={styles.ticketNumberText}>{report.ticket_number}</Text>
+          <Text style={[styles.issueTitle, isDark && { color: colors.text }]}>{report.title}</Text>
+          <Text style={[styles.ticketNumberText, isDark && { color: colors.tint }]}>{report.ticket_number}</Text>
         </View>
 
         {/* Info Badges Row */}
         <View style={styles.badgesRow}>
-          <View style={styles.badgeItem}>
-            <MapPin size={14} color={CivicCareColors.brandPrimary} />
-            <Text style={styles.badgeText} numberOfLines={1}>
+          <View style={[styles.badgeItem, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+            <MapPin size={14} color={isDark ? colors.tint : CivicCareColors.brandPrimary} />
+            <Text style={[styles.badgeText, isDark && { color: colors.textSecondary }]} numberOfLines={1}>
               {report.location_address.split(',')[0]}
             </Text>
           </View>
-          <View style={[styles.badgeItem, { backgroundColor: '#FEE2E2' }]}>
+          <View style={[styles.badgeItem, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEE2E2', borderColor: isDark ? 'rgba(239, 68, 68, 0.35)' : '#FECACA' }]}>
             <ShieldAlert size={14} color="#DC2626" />
-            <Text style={[styles.badgeText, { color: '#DC2626', fontWeight: '700' }]}>
+            <Text style={[styles.badgeText, { color: '#EF4444', fontWeight: '700' }]}>
               {report.severity} Severity
             </Text>
           </View>
@@ -132,15 +135,15 @@ export default function ReportDetailsScreen() {
 
         {/* Timeline Header */}
         <View style={styles.timelineHeaderRow}>
-          <Text style={styles.timelineSectionTitle}>Progress Timeline</Text>
-          <View style={styles.liveIndicator}>
+          <Text style={[styles.timelineSectionTitle, isDark && { color: colors.text }]}>Progress Timeline</Text>
+          <View style={[styles.liveIndicator, isDark && { backgroundColor: 'rgba(22, 163, 74, 0.15)' }]}>
             <View style={styles.liveDot} />
-            <Text style={styles.liveText}>Live Tracking</Text>
+            <Text style={[styles.liveText, isDark && { color: '#4ADE80' }]}>Live Tracking</Text>
           </View>
         </View>
 
         {/* Vertical Chronological Timeline (Matches Screen 7 in image.png) */}
-        <View style={styles.timelineContainer}>
+        <View style={[styles.timelineContainer, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
           {report.timeline.map((step, idx) => {
             const isLast = idx === report.timeline.length - 1;
             const isCompleted = step.is_completed;
@@ -156,13 +159,14 @@ export default function ReportDetailsScreen() {
                       isCompleted && styles.indicatorCompleted,
                       isActive && styles.indicatorActivePulse,
                       !isCompleted && !isActive && styles.indicatorPending,
+                      !isCompleted && !isActive && isDark && { backgroundColor: colors.card, borderColor: colors.border },
                     ]}>
                     {isCompleted ? (
                       <CheckCircle2 size={18} color="#FFFFFF" />
                     ) : isActive ? (
                       <View style={styles.activePulseInner} />
                     ) : (
-                      <Circle size={14} color="#CBD5E1" />
+                      <Circle size={14} color={isDark ? colors.border : '#CBD5E1'} />
                     )}
                   </View>
 
@@ -171,6 +175,7 @@ export default function ReportDetailsScreen() {
                       style={[
                         styles.connectingLine,
                         isCompleted ? styles.lineCompleted : styles.linePending,
+                        !isCompleted && isDark && { backgroundColor: colors.border },
                       ]}
                     />
                   )}
@@ -182,14 +187,15 @@ export default function ReportDetailsScreen() {
                     <Text
                       style={[
                         styles.milestoneTitle,
-                        isActive && { color: CivicCareColors.brandPrimary },
+                        isDark && { color: colors.text },
+                        isActive && { color: colors.tint },
                       ]}>
                       {step.title}
                     </Text>
-                    <Text style={styles.milestoneTime}>{step.timestamp}</Text>
+                    <Text style={[styles.milestoneTime, isDark && { color: colors.textTertiary }]}>{step.timestamp}</Text>
                   </View>
 
-                  <Text style={styles.milestoneDescription}>{step.description}</Text>
+                  <Text style={[styles.milestoneDescription, isDark && { color: colors.textSecondary }]}>{step.description}</Text>
                 </View>
               </View>
             );
@@ -197,14 +203,14 @@ export default function ReportDetailsScreen() {
         </View>
 
         {/* Description Section */}
-        <View style={styles.detailsSection}>
-          <Text style={styles.detailsHeader}>Description</Text>
-          <Text style={styles.detailsBody}>{report.description}</Text>
+        <View style={[styles.detailsSection, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+          <Text style={[styles.detailsHeader, isDark && { color: colors.text }]}>Description</Text>
+          <Text style={[styles.detailsBody, isDark && { color: colors.textSecondary }]}>{report.description}</Text>
         </View>
 
         <View style={{ height: 60 }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

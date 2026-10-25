@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
 import { useReports } from '@/services/reportsStore';
 import { useUser } from '@/services/clerk';
+import { useAppTheme } from '@/services/themeContext';
 import {
   MapPin,
   ChevronDown,
@@ -46,6 +47,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { reports, setFilterCategory, filterCategory } = useReports();
   const { user } = useUser();
+  const { isDark, colors } = useAppTheme();
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredReports = reports.filter(r => {
@@ -69,22 +71,22 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" />
+    <View style={[styles.container, { paddingTop: insets.top }, isDark && { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <ScrollView
-        style={styles.scrollView}
+        style={[styles.scrollView, isDark && { backgroundColor: colors.background }]}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 95 }]}
         showsVerticalScrollIndicator={false}>
         
         {/* Top Header: Location Selector & User Avatar */}
         <View style={styles.headerRow}>
           <TouchableOpacity
-            style={styles.locationSelector}
+            style={[styles.locationSelector, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
             activeOpacity={0.7}
             onPress={() => router.push('/(tabs)/explore')}>
-            <MapPin size={18} color={CivicCareColors.brandPrimary} />
-            <Text style={styles.locationText}>Mumbai</Text>
-            <ChevronDown size={16} color={CivicCareColors.textSecondary} />
+            <MapPin size={18} color={isDark ? colors.tint : CivicCareColors.brandPrimary} />
+            <Text style={[styles.locationText, isDark && { color: colors.text }]}>Mumbai</Text>
+            <ChevronDown size={16} color={isDark ? colors.textSecondary : CivicCareColors.textSecondary} />
           </TouchableOpacity>
 
           <View style={styles.headerRightActions}>
@@ -98,7 +100,7 @@ export default function HomeScreen() {
                     ? { uri: user.imageUrl }
                     : require('@/assets/images/default-avatar.png')
                 }
-                style={styles.avatarImage}
+                style={[styles.avatarImage, isDark && { borderColor: colors.border }]}
               />
               <View style={styles.onlineBadge} />
             </TouchableOpacity>
@@ -106,14 +108,14 @@ export default function HomeScreen() {
         </View>
 
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <Search size={18} color={CivicCareColors.textTertiary} />
+        <View style={[styles.searchContainer, isDark && { backgroundColor: colors.inputBg, borderColor: colors.border }]}>
+          <Search size={18} color={isDark ? colors.textTertiary : CivicCareColors.textTertiary} />
           <TextInput
             placeholder="Search for issues near you..."
-            placeholderTextColor={CivicCareColors.textTertiary}
+            placeholderTextColor={isDark ? colors.textTertiary : CivicCareColors.textTertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
-            style={styles.searchInput}
+            style={[styles.searchInput, isDark && { color: colors.text }]}
           />
         </View>
 
@@ -143,7 +145,7 @@ export default function HomeScreen() {
 
         {/* Issue Categories Grid (9 Authentic Categories) */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Categories</Text>
+          <Text style={[styles.sectionTitle, isDark && { color: colors.text }]}>Categories</Text>
           {filterCategory && (
             <TouchableOpacity onPress={() => setFilterCategory(null)}>
               <Text style={styles.clearFilterText}>Clear filter</Text>
@@ -159,7 +161,9 @@ export default function HomeScreen() {
                 key={cat.id}
                 style={[
                   styles.categoryCard,
+                  isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border },
                   isSelected && styles.categoryCardSelected,
+                  isSelected && isDark && { backgroundColor: colors.backgroundSelected, borderColor: colors.tint },
                 ]}
                 activeOpacity={0.75}
                 onPress={() => handleCategoryPress(cat.name)}>
@@ -171,7 +175,9 @@ export default function HomeScreen() {
                 <Text
                   style={[
                     styles.categoryLabel,
+                    isDark && { color: colors.textSecondary },
                     isSelected && styles.categoryLabelSelected,
+                    isSelected && isDark && { color: colors.tint },
                   ]}
                   numberOfLines={1}>
                   {cat.name}
@@ -183,21 +189,21 @@ export default function HomeScreen() {
 
         {/* Recent Reports Nearby Section */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>Recent Reports Nearby</Text>
+          <Text style={[styles.sectionTitle, isDark && { color: colors.text }]}>Recent Reports Nearby</Text>
           <TouchableOpacity onPress={() => router.push('/(tabs)/reports')}>
-            <Text style={styles.viewAllLink}>View All</Text>
+            <Text style={[styles.viewAllLink, isDark && { color: colors.tint }]}>View All</Text>
           </TouchableOpacity>
         </View>
 
         {/* Report Cards Feed — Zero dummy records */}
         <View style={styles.reportsFeed}>
           {filteredReports.length === 0 ? (
-            <View style={styles.emptyFeedCard}>
-              <View style={styles.emptyIconCircle}>
+            <View style={[styles.emptyFeedCard, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+              <View style={[styles.emptyIconCircle, isDark && { backgroundColor: 'rgba(22, 163, 74, 0.15)' }]}>
                 <CheckCircle2 size={32} color="#16A34A" />
               </View>
-              <Text style={styles.emptyFeedTitle}>No civic issues found</Text>
-              <Text style={styles.emptyFeedSubtitle}>
+              <Text style={[styles.emptyFeedTitle, isDark && { color: colors.text }]}>No civic issues found</Text>
+              <Text style={[styles.emptyFeedSubtitle, isDark && { color: colors.textSecondary }]}>
                 {filterCategory
                   ? `No active ${filterCategory} reports found. Tap "Clear filter" to see all reports.`
                   : 'Your neighborhood looks clear! Tap "Report an Issue" to report a problem.'}
@@ -214,14 +220,14 @@ export default function HomeScreen() {
             filteredReports.map(report => (
               <TouchableOpacity
                 key={report.id}
-                style={styles.reportCard}
+                style={[styles.reportCard, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
                 activeOpacity={0.85}
                 onPress={() => router.push({ pathname: '/report-details', params: { id: report.id } })}>
                 <Image source={{ uri: report.image_url }} style={styles.reportThumbnail} />
                 
                 <View style={styles.reportInfoColumn}>
                   <View style={styles.reportTitleRow}>
-                    <Text style={styles.reportTitle} numberOfLines={1}>
+                    <Text style={[styles.reportTitle, isDark && { color: colors.text }]} numberOfLines={1}>
                       {report.title}
                     </Text>
                     <View
@@ -243,19 +249,19 @@ export default function HomeScreen() {
                     </View>
                   </View>
 
-                  <Text style={styles.reportAddress} numberOfLines={1}>
+                  <Text style={[styles.reportAddress, isDark && { color: colors.textSecondary }]} numberOfLines={1}>
                     {report.location_address}
                   </Text>
 
                   <View style={styles.reportMetaRow}>
                     <View style={styles.metaItem}>
-                      <Clock size={12} color={CivicCareColors.textTertiary} />
-                      <Text style={styles.metaText}>{report.time_ago}</Text>
+                      <Clock size={12} color={isDark ? colors.textTertiary : CivicCareColors.textTertiary} />
+                      <Text style={[styles.metaText, isDark && { color: colors.textTertiary }]}>{report.time_ago}</Text>
                     </View>
-                    <Text style={styles.metaDot}>•</Text>
+                    <Text style={[styles.metaDot, isDark && { color: colors.border }]}>•</Text>
                     <View style={styles.metaItem}>
-                      <Navigation size={12} color={CivicCareColors.textTertiary} />
-                      <Text style={styles.metaText}>{report.distance_km}</Text>
+                      <Navigation size={12} color={isDark ? colors.textTertiary : CivicCareColors.textTertiary} />
+                      <Text style={[styles.metaText, isDark && { color: colors.textTertiary }]}>{report.distance_km}</Text>
                     </View>
                   </View>
                 </View>

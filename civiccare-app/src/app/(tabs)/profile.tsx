@@ -170,7 +170,7 @@ export default function ProfileScreen() {
         <View style={[styles.settingsGroup, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
           <View style={[styles.settingsRow, { borderBottomWidth: 0 }]}>
             <View style={styles.rowIconText}>
-              <View style={[styles.iconBox, { backgroundColor: isDark ? '#1E293B' : '#FEF3C7' }]}>
+              <View style={[styles.iconBox, { backgroundColor: isDark ? '#262626' : '#FEF3C7' }]}>
                 {isDark ? (
                   <Moon size={18} color="#93C5FD" />
                 ) : (
@@ -235,7 +235,7 @@ export default function ProfileScreen() {
             <Switch
               value={pushEnabled}
               onValueChange={setPushEnabled}
-              trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#93C5FD' }}
+              trackColor={{ false: isDark ? '#343434' : '#E2E8F0', true: '#93C5FD' }}
               thumbColor={pushEnabled ? CivicCareColors.brandPrimary : '#94A3B8'}
             />
           </View>
@@ -253,7 +253,7 @@ export default function ProfileScreen() {
             <Switch
               value={smsEnabled}
               onValueChange={setSmsEnabled}
-              trackColor={{ false: isDark ? '#334155' : '#E2E8F0', true: '#93C5FD' }}
+              trackColor={{ false: isDark ? '#343434' : '#E2E8F0', true: '#93C5FD' }}
               thumbColor={smsEnabled ? CivicCareColors.brandPrimary : '#94A3B8'}
             />
           </View>

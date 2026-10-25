@@ -126,6 +126,7 @@ export default function ProfileScreen() {
       try {
         const cityKeyword = citizenWard.split(/[,( -]/)[0].trim();
         if (!cityKeyword) return;
+        // 1. Check Supabase Cache (Instant 5ms)
         const { data, error } = await supabase
           .from('civic_helplines')
           .select('name, number, desc_text')
@@ -139,6 +140,23 @@ export default function ProfileScreen() {
             number: data.number,
             desc: data.desc_text,
           });
+          return;
+        }
+
+        // 2. If not in Supabase, dynamically query AI Backend Auto-Discovery
+        const aiBackendBase = Platform.OS === 'web' ? 'http://localhost:8000' : 'http://192.168.7.9:8000';
+        const aiRes = await fetch(`${aiBackendBase}/civic-helpline?city=${encodeURIComponent(cityKeyword)}`, {
+          signal: AbortSignal.timeout(4000),
+        });
+        if (aiRes.ok) {
+          const aiData = await aiRes.json();
+          if (aiData?.name && aiData?.number && !isCancelled) {
+            setDbHelpline({
+              name: aiData.name,
+              number: aiData.number,
+              desc: aiData.desc,
+            });
+          }
         }
       } catch {
         // Fallback gracefully to offline helper

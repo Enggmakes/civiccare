@@ -265,6 +265,11 @@ CREATE POLICY "Public read on civic_helplines"
     ON public.civic_helplines FOR SELECT
     USING (true);
 
+DROP POLICY IF EXISTS "Public insert on civic_helplines" ON public.civic_helplines;
+CREATE POLICY "Public insert on civic_helplines"
+    ON public.civic_helplines FOR INSERT
+    WITH CHECK (true);
+
 -- Seed Initial Maharashtra Civic Authorities & Talukas
 INSERT INTO public.civic_helplines (city, district, name, number, desc_text) VALUES
 ('Ahilyanagar', 'Ahilyanagar', 'Ahilyanagar Municipal Corporation', '18002330241', 'Civic grievances & 24x7 control room'),

@@ -117,36 +117,41 @@ export default function NearbyMapScreen() {
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     * { -webkit-tap-highlight-color: transparent; }
-    body, html, #map { margin: 0; padding: 0; width: 100%; height: 100%; background: ${isDark ? '#000000' : '#F8FAFC'}; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    body, html, #map { margin: 0; padding: 0; width: 100%; height: 100%; background: ${isDark ? '#121212' : '#F8FAFC'}; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    ${isDark ? `
+    .leaflet-tile-pane {
+      filter: invert(100%) hue-rotate(180deg) brightness(88%) contrast(102%) saturate(70%);
+    }
+    ` : ''}
     .custom-pin-marker {
       background: transparent !important;
       border: none !important;
     }
     .pin-container {
       position: relative;
-      width: 40px;
-      height: 48px;
+      width: 28px;
+      height: 36px;
       display: flex;
       flex-direction: column;
       align-items: center;
       cursor: pointer;
     }
     .pin-head {
-      width: 38px;
-      height: 38px;
+      width: 26px;
+      height: 26px;
       border-radius: 50% 50% 50% 0;
       transform: rotate(-45deg);
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 2.5px solid #FFFFFF;
-      box-shadow: 0 5px 14px rgba(0,0,0,0.32);
-      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border: 2px solid #FFFFFF;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.30);
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
       position: relative;
     }
     .pin-head.selected {
-      transform: rotate(-45deg) scale(1.22);
-      box-shadow: 0 8px 22px rgba(0,0,0,0.45), 0 0 0 4px rgba(37, 99, 235, 0.45);
+      transform: rotate(-45deg) scale(1.15);
+      box-shadow: 0 5px 14px rgba(0,0,0,0.40), 0 0 0 3px rgba(37, 99, 235, 0.5);
       border-color: #FFFFFF;
       z-index: 999;
     }
@@ -156,18 +161,18 @@ export default function NearbyMapScreen() {
       align-items: center;
       justify-content: center;
       color: #FFFFFF;
-      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+      filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25));
     }
     .pin-shadow {
       position: absolute;
       bottom: 0px;
       left: 50%;
       transform: translateX(-50%);
-      width: 14px;
-      height: 5px;
-      background: rgba(0,0,0,0.28);
+      width: 10px;
+      height: 3px;
+      background: rgba(0,0,0,0.25);
       border-radius: 50%;
-      filter: blur(1.5px);
+      filter: blur(1px);
     }
   </style>
 </head>
@@ -180,14 +185,9 @@ export default function NearbyMapScreen() {
       maxZoom: 20
     }).setView([${centerLat}, ${centerLng}], 14);
 
-    var tileUrl = ${isDark}
-      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-
-    L.tileLayer(tileUrl, {
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 20,
       maxNativeZoom: 19,
-      subdomains: 'abcd',
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
@@ -196,22 +196,22 @@ export default function NearbyMapScreen() {
     function getCategorySvg(type) {
       if (type === 'garbage') {
         // Flaticon Trash Can Icon
-        return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>';
+        return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>';
       }
       if (type === 'pothole') {
         // Flaticon Hazard Caution Icon
-        return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+        return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
       }
       if (type === 'streetlight') {
         // Flaticon Streetlight / Lightbulb Icon
-        return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v3M12 19v3M5 5l2 2M17 17l2 2M2 12h3M19 12h3M5 19l2-2M17 7l2-2M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/></svg>';
+        return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v3M12 19v3M5 5l2 2M17 17l2 2M2 12h3M19 12h3M5 19l2-2M17 7l2-2M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/></svg>';
       }
       if (type === 'water') {
         // Flaticon Water Droplet Icon
-        return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>';
+        return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>';
       }
       // Default Flaticon Shield Icon
-      return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+      return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
     }
 
     markersData.forEach(function(m) {
@@ -226,8 +226,8 @@ export default function NearbyMapScreen() {
       var customIcon = L.divIcon({
         className: 'custom-pin-marker',
         html: pinHtml,
-        iconSize: [40, 48],
-        iconAnchor: [20, 47]
+        iconSize: [28, 36],
+        iconAnchor: [14, 35]
       });
 
       var marker = L.marker([m.lat, m.lng], { icon: customIcon }).addTo(map);

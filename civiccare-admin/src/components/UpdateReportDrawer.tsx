@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Sparkles,
@@ -6,6 +6,7 @@ import {
   Clock,
   User,
   CheckCircle2,
+  AlertTriangle,
   Save,
   MessageSquare,
 } from 'lucide-react';
@@ -39,29 +40,46 @@ export const UpdateReportDrawer: React.FC<UpdateReportDrawerProps> = ({
 }) => {
   if (!report) return null;
 
-  const [status, setStatus] = useState<ReportStatus>(report.status);
+  const [status, setStatus] = useState<ReportStatus>(
+    report.status === 'Submitted' ? 'Pending' : report.status
+  );
   const [assignedTo, setAssignedTo] = useState<string>(
     report.assigned_to || FIELD_STAFF[0]
   );
-  const [severity, setSeverity] = useState<SeverityLevel>(report.severity);
+  const [severity, setSeverity] = useState<SeverityLevel>(report.severity || 'Medium');
   const [remarks, setRemarks] = useState<string>(
     report.official_remarks || 'Work order issued. Field team deployed on site.'
   );
   const [saving, setSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Sync state whenever active report changes
+  useEffect(() => {
+    if (report) {
+      setStatus(report.status === 'Submitted' ? 'Pending' : report.status);
+      setAssignedTo(report.assigned_to || FIELD_STAFF[0]);
+      setSeverity(report.severity || 'Medium');
+      setRemarks(report.official_remarks || 'Work order issued. Field team deployed on site.');
+      setToastMessage('');
+      setErrorMessage('');
+    }
+  }, [report?.id]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setErrorMessage('');
     try {
       await onSaveUpdate(report.id, status, remarks, assignedTo, severity);
-      setToastMessage('Report updated successfully and broadcasted in real time!');
+      setToastMessage('Report updated successfully and saved to database!');
       setTimeout(() => {
         setSaving(false);
         onClose();
       }, 700);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error('Update report failed:', err);
+      setErrorMessage(err?.message || 'Failed to update report in database. Please try again.');
       setSaving(false);
     }
   };
@@ -86,6 +104,13 @@ export const UpdateReportDrawer: React.FC<UpdateReportDrawerProps> = ({
             <div style={styles.toastSuccess}>
               <CheckCircle2 size={16} />
               <span>{toastMessage}</span>
+            </div>
+          )}
+
+          {errorMessage && (
+            <div style={styles.toastError}>
+              <AlertTriangle size={16} />
+              <span>{errorMessage}</span>
             </div>
           )}
 
@@ -131,7 +156,7 @@ export const UpdateReportDrawer: React.FC<UpdateReportDrawerProps> = ({
                 value={status}
                 onChange={(e) => setStatus(e.target.value as ReportStatus)}
                 style={styles.selectInput}>
-                <option value="Pending">Pending (Awaiting Crew)</option>
+                <option value="Pending">Pending / Submitted (Awaiting Crew)</option>
                 <option value="In Progress">In-Progress (Work Started)</option>
                 <option value="Resolved">Resolved (Repairs Finished)</option>
                 <option value="Closed">Closed (Citizen Approved)</option>
@@ -219,16 +244,13 @@ export const UpdateReportDrawer: React.FC<UpdateReportDrawerProps> = ({
             <div style={styles.milestonesSection}>
               <h5 style={styles.milestonesHeading}>Resolution Progress Timeline</h5>
               <div style={styles.timelineList}>
-                {(report.timeline && report.timeline.length > 0
-                  ? report.timeline
-                  : [
-                      { step: 1, title: 'Report Submitted', remarks: 'Geo-tagged citizen intake', is_completed: true },
-                      { step: 2, title: 'AI Verification', remarks: 'Defect classified with confidence score', is_completed: true },
-                      { step: 3, title: 'Routed to Department', remarks: report.department_name, is_completed: true },
-                      { step: 4, title: 'Work In-Progress', remarks: 'Field crew assigned', is_completed: status === 'In Progress' || status === 'Resolved' },
-                      { step: 5, title: 'Issue Resolved', remarks: 'Repairs completed & verified', is_completed: status === 'Resolved' },
-                    ]
-                ).map((item, idx) => (
+                {[
+                  { step: 1, title: 'Report Submitted', remarks: 'Geo-tagged citizen intake', is_completed: true },
+                  { step: 2, title: 'AI Verification', remarks: `AI model validated defect (${((report.ai_confidence || 0.94) * 100).toFixed(1)}%)`, is_completed: true },
+                  { step: 3, title: 'Department Assigned', remarks: report.department_name || 'Routed to operations desk', is_completed: true },
+                  { step: 4, title: 'Work In-Progress', remarks: assignedTo ? `Crew: ${assignedTo}` : 'Field crew assigned', is_completed: status === 'In Progress' || status === 'Resolved' || status === 'Closed' },
+                  { step: 5, title: 'Issue Resolved', remarks: remarks || 'Repairs completed & verified', is_completed: status === 'Resolved' || status === 'Closed' },
+                ].map((item, idx) => (
                   <div key={idx} style={styles.timelineItem}>
                     <div
                       style={{
@@ -344,6 +366,18 @@ const styles: Record<string, React.CSSProperties> = {
     backgroundColor: '#ECFDF5',
     color: '#059669',
     border: '1px solid #A7F3D0',
+    padding: '10px 14px',
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: '600',
+  },
+  toastError: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    backgroundColor: '#FEF2F2',
+    color: '#DC2626',
+    border: '1px solid #FECACA',
     padding: '10px 14px',
     borderRadius: '10px',
     fontSize: '13px',

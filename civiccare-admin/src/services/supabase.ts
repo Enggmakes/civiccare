@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { CivicReport, KPIStats } from '../types';
+import type { CivicReport, KPIStats, ReportStatus, SeverityLevel, TimelineEvent } from '../types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://soxepjypgtbcjiiurhmk.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNveGVwanlwZ3RiY2ppaXVyaG1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI5MTU2NDgsImV4cCI6MjEwODQ5MTY0OH0.tuFKKW7qkjWUjX20nLsmjGZnsR34dPFhH0lGxNP0oZE';
@@ -143,7 +143,7 @@ export async function fetchCivicReports(): Promise<CivicReport[]> {
   try {
     const { data, error } = await supabase
       .from('reports')
-      .select('*')
+      .select('*, report_status_history(*)')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -154,34 +154,94 @@ export async function fetchCivicReports(): Promise<CivicReport[]> {
     if (!data) return [];
 
     // Merge or normalize Supabase reports
-    return data.map((item) => ({
-      id: item.id,
-      ticket_number: item.ticket_number || `#CC-${item.id.slice(0, 8)}`,
-      title: item.title,
-      description: item.description,
-      category_id: item.category_id,
-      severity: item.severity || 'Medium',
-      status: item.status || 'Pending',
-      formatted_address: item.formatted_address || 'City Ward Area',
-      latitude: item.latitude || 19.6971,
-      longitude: item.longitude || 72.7588,
-      primary_image_url: item.primary_image_url || 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=800&auto=format&fit=crop&q=80',
-      department_name: item.department_name || 'Road Maintenance & Infrastructure',
-      subscriber_count: item.subscriber_count || 1,
-      ai_confidence: item.ai_confidence ? parseFloat(item.ai_confidence) : 0.94,
-      assigned_to: item.assigned_to || "Operations Triage Desk",
-      official_remarks: item.official_remarks || 'Report actively monitored by CivicCare Operations Hub.',
-      resolution_proof_url: item.resolution_proof_url,
-      created_at: item.created_at,
-      updated_at: item.updated_at,
-      timeline: item.timeline || [
-        { step: 1, title: 'Report Submitted', remarks: 'Citizen submitted grievance', is_completed: true, created_at: item.created_at },
-        { step: 2, title: 'AI Verification', remarks: 'AI model validated issue category', is_completed: true, created_at: item.created_at },
-        { step: 3, title: 'Department Assigned', remarks: item.department_name || 'Routed to operations desk', is_completed: item.status !== 'Submitted', created_at: item.created_at },
-        { step: 4, title: 'In Progress', remarks: 'Field unit assigned', is_completed: item.status === 'In Progress' || item.status === 'Resolved', created_at: '' },
-        { step: 5, title: 'Resolved', remarks: 'Work certified and closed', is_completed: item.status === 'Resolved', created_at: '' },
-      ],
-    }));
+    return data.map((item) => {
+      // Sort status history milestones by creation time or step
+      const historyList = (item.report_status_history || []).sort(
+        (a: any, b: any) => (a.step ?? 0) - (b.step ?? 0)
+      );
+
+      // Extract latest history remarks & assignee if present
+      const latestHistory = historyList[historyList.length - 1];
+      let assignedTo = 'Operations Triage Desk';
+      let officialRemarks = 'Report actively monitored by CivicCare Operations Hub.';
+
+      if (latestHistory?.remarks) {
+        officialRemarks = latestHistory.remarks;
+        const match = latestHistory.remarks.match(/Assigned to: ([^)]+)/);
+        if (match && match[1]) {
+          assignedTo = match[1].trim();
+        }
+      }
+
+      // Map DB status to UI status ('Submitted' in PostgreSQL -> 'Pending' in UI)
+      const uiStatus: ReportStatus =
+        item.status === 'Submitted' ? 'Pending' : (item.status as ReportStatus);
+
+      const isInProgress = uiStatus === 'In Progress';
+      const isResolved = uiStatus === 'Resolved' || uiStatus === 'Closed';
+
+      let timeline: TimelineEvent[];
+      if (historyList.length > 0) {
+        timeline = historyList.map((h: any) => ({
+          step: h.step,
+          title: h.title,
+          remarks: h.remarks,
+          is_completed: h.is_completed ?? true,
+          created_at: h.created_at || item.created_at,
+        }));
+
+        // Ensure steps up to current status are represented
+        if (isInProgress && !timeline.some((t) => t.step === 4)) {
+          timeline.push({
+            step: 4,
+            title: 'In Progress (Field Unit Deployed)',
+            remarks: assignedTo ? `Crew: ${assignedTo}` : 'Maintenance team deployed on site',
+            is_completed: true,
+            created_at: '',
+          });
+        }
+        if (isResolved && !timeline.some((t) => t.step === 5)) {
+          timeline.push({
+            step: 5,
+            title: 'Resolved (Repairs Finished)',
+            remarks: officialRemarks || 'Work certified and closed',
+            is_completed: true,
+            created_at: '',
+          });
+        }
+      } else {
+        timeline = [
+          { step: 1, title: 'Report Submitted', remarks: 'Citizen submitted grievance', is_completed: true, created_at: item.created_at },
+          { step: 2, title: 'AI Verification', remarks: `AI model validated defect (${((item.ai_confidence || 0.94) * 100).toFixed(1)}%)`, is_completed: true, created_at: item.created_at },
+          { step: 3, title: 'Department Assigned', remarks: item.department_name || 'Routed to operations desk', is_completed: true, created_at: item.created_at },
+          { step: 4, title: 'In Progress', remarks: isInProgress || isResolved ? (assignedTo ? `Crew: ${assignedTo}` : 'Field unit deployed') : 'Awaiting field dispatch', is_completed: isInProgress || isResolved, created_at: '' },
+          { step: 5, title: 'Resolved', remarks: isResolved ? (officialRemarks || 'Work certified and closed') : 'Repairs pending completion', is_completed: isResolved, created_at: '' },
+        ];
+      }
+
+      return {
+        id: item.id,
+        ticket_number: item.ticket_number || `#CC-${item.id.slice(0, 8)}`,
+        title: item.title,
+        description: item.description,
+        category_id: item.category_id,
+        severity: item.severity || 'Medium',
+        status: uiStatus,
+        formatted_address: item.formatted_address || 'City Ward Area',
+        latitude: item.latitude || 19.6971,
+        longitude: item.longitude || 72.7588,
+        primary_image_url: item.primary_image_url || 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=800&auto=format&fit=crop&q=80',
+        department_name: item.department_name || 'Road Maintenance & Infrastructure',
+        subscriber_count: item.subscriber_count || 1,
+        ai_confidence: item.ai_confidence ? parseFloat(item.ai_confidence) : 0.94,
+        assigned_to: assignedTo,
+        official_remarks: officialRemarks,
+        resolution_proof_url: item.resolution_proof_url,
+        created_at: item.created_at,
+        updated_at: latestHistory?.created_at || item.created_at,
+        timeline,
+      };
+    });
   } catch (err) {
     console.error('Error fetching reports from Supabase:', err);
     return SEED_REPORTS;
@@ -190,26 +250,80 @@ export async function fetchCivicReports(): Promise<CivicReport[]> {
 
 export async function updateReportStatus(
   reportId: string,
-  newStatus: string,
+  newStatus: ReportStatus,
   remarks?: string,
-  assignedTo?: string
+  assignedTo?: string,
+  severity?: SeverityLevel
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const updatePayload: Record<string, any> = {
-      status: newStatus,
-      updated_at: new Date().toISOString(),
-    };
-    if (remarks) updatePayload.official_remarks = remarks;
-    if (assignedTo) updatePayload.assigned_to = assignedTo;
+    // 1. Map UI status to Supabase PostgreSQL enum:
+    // report_status_enum: 'Submitted' | 'AI_Verified' | 'Routed' | 'In Progress' | 'Resolved' | 'Closed' | 'Duplicate'
+    let dbStatus: string = newStatus;
+    if (newStatus === 'Pending') {
+      dbStatus = 'Submitted';
+    }
 
-    const { error } = await supabase
+    // 2. Prepare payload for 'reports' table.
+    // Note: 'reports' columns are: id, ticket_number, title, description, category_id, severity, status, formatted_address, latitude, longitude, primary_image_url, department_name, subscriber_count, ai_confidence, created_at.
+    const updatePayload: Record<string, any> = {
+      status: dbStatus,
+    };
+    if (severity) {
+      updatePayload.severity = severity;
+    }
+
+    const { error: reportError } = await supabase
       .from('reports')
       .update(updatePayload)
       .eq('id', reportId);
 
-    if (error) {
-      console.error('Supabase update failed:', error);
-      return { success: false, error: error.message };
+    if (reportError) {
+      console.error('Supabase update failed on reports table:', reportError);
+      return { success: false, error: reportError.message };
+    }
+
+    // 3. Record milestone in 'report_status_history'
+    let stepNum = 3;
+    let stepTitle = 'Department Triage Updated';
+    if (newStatus === 'In Progress') {
+      stepNum = 4;
+      stepTitle = 'Work In Progress (Field Crew Deployed)';
+    } else if (newStatus === 'Resolved') {
+      stepNum = 5;
+      stepTitle = 'Issue Resolved (Repairs Certified)';
+    } else if (newStatus === 'Closed') {
+      stepNum = 6;
+      stepTitle = 'Ticket Closed';
+    } else if (newStatus === 'Duplicate') {
+      stepNum = 0;
+      stepTitle = 'Marked as Duplicate';
+    }
+
+    const remarksText = remarks?.trim() || '';
+    const assignedText = assignedTo?.trim() || '';
+    let historyRemarks = '';
+    if (remarksText && assignedText) {
+      historyRemarks = `${remarksText} (Assigned to: ${assignedText})`;
+    } else if (remarksText) {
+      historyRemarks = remarksText;
+    } else if (assignedText) {
+      historyRemarks = `Assigned to: ${assignedText}`;
+    } else {
+      historyRemarks = `Status updated to ${newStatus}`;
+    }
+
+    const { error: histError } = await supabase
+      .from('report_status_history')
+      .insert({
+        report_id: reportId,
+        step: stepNum,
+        title: stepTitle,
+        remarks: historyRemarks,
+        is_completed: true,
+      });
+
+    if (histError) {
+      console.warn('Could not insert report_status_history milestone:', histError.message);
     }
 
     return { success: true };

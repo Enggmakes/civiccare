@@ -109,19 +109,27 @@ export function App() {
             setReports((prev) => [formatted, ...prev.filter((r) => r.id !== formatted.id)]);
           } else if (payload.eventType === 'UPDATE') {
             const updated = payload.new as any;
+            const uiStatus: ReportStatus =
+              updated.status === 'Submitted' ? 'Pending' : (updated.status as ReportStatus);
             setReports((prev) =>
               prev.map((r) =>
                 r.id === updated.id
                   ? {
                       ...r,
-                      status: updated.status || r.status,
-                      official_remarks: updated.official_remarks || r.official_remarks,
-                      assigned_to: updated.assigned_to || r.assigned_to,
+                      status: uiStatus,
                       severity: updated.severity || r.severity,
-                      updated_at: updated.updated_at,
                     }
                   : r
               )
+            );
+            setSelectedReport((prev) =>
+              prev && prev.id === updated.id
+                ? {
+                    ...prev,
+                    status: uiStatus,
+                    severity: updated.severity || prev.severity,
+                  }
+                : prev
             );
           } else if (payload.eventType === 'DELETE') {
             const oldRow = payload.old as any;
@@ -196,24 +204,47 @@ export function App() {
     assignedTo: string,
     severity: SeverityLevel
   ) => {
-    // Optimistic UI update
+    // 1. Commit to Supabase
+    const result = await updateReportStatus(reportId, newStatus, remarks, assignedTo, severity);
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to update report status in database');
+    }
+
+    // 2. Update local state
     setReports((prev) =>
       prev.map((r) =>
         r.id === reportId
           ? {
               ...r,
               status: newStatus,
-              official_remarks: remarks,
-              assigned_to: assignedTo,
+              official_remarks: remarks || (assignedTo ? `Assigned to: ${assignedTo}` : r.official_remarks),
+              assigned_to: assignedTo || r.assigned_to,
               severity: severity,
               updated_at: new Date().toISOString(),
+              timeline: [
+                { step: 1, title: 'Report Submitted', remarks: 'Geo-tagged citizen intake', is_completed: true, created_at: r.created_at },
+                { step: 2, title: 'AI Verification', remarks: `AI model validated defect (${((r.ai_confidence || 0.94) * 100).toFixed(1)}%)`, is_completed: true, created_at: r.created_at },
+                { step: 3, title: 'Department Assigned', remarks: r.department_name, is_completed: true, created_at: r.created_at },
+                { step: 4, title: 'In Progress', remarks: assignedTo ? `Crew: ${assignedTo}` : 'Field crew deployed', is_completed: newStatus === 'In Progress' || newStatus === 'Resolved' || newStatus === 'Closed', created_at: new Date().toISOString() },
+                { step: 5, title: 'Resolved', remarks: remarks || 'Repairs completed & verified', is_completed: newStatus === 'Resolved' || newStatus === 'Closed', created_at: newStatus === 'Resolved' || newStatus === 'Closed' ? new Date().toISOString() : '' },
+              ],
             }
           : r
       )
     );
 
-    // Commit to Supabase
-    await updateReportStatus(reportId, newStatus, remarks, assignedTo);
+    // Also sync selectedReport
+    setSelectedReport((prev) =>
+      prev && prev.id === reportId
+        ? {
+            ...prev,
+            status: newStatus,
+            official_remarks: remarks || (assignedTo ? `Assigned to: ${assignedTo}` : prev.official_remarks),
+            assigned_to: assignedTo || prev.assigned_to,
+            severity: severity,
+          }
+        : prev
+    );
   };
 
   // If not logged in, show Screen 18 (Admin Login)

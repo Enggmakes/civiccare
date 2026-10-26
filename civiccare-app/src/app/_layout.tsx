@@ -30,10 +30,11 @@ function RootNavigationLayout() {
       <View style={[Platform.OS === 'web' ? styles.webContainer : styles.nativeContainer, { backgroundColor: colors.background }]}>
         <View style={[Platform.OS === 'web' ? styles.webShell : styles.nativeContainer, Platform.OS === 'web' && { backgroundColor: colors.backgroundElement }]}>
           <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false }} />
+            <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="welcome" options={{ headerShown: false, gestureEnabled: false, animation: 'fade' }} />
             <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
             <Stack.Screen name="auth" options={{ headerShown: false, gestureEnabled: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false, gestureEnabled: false }} />
             <Stack.Screen name="report-issue" options={{ headerShown: false, presentation: 'card' }} />
             <Stack.Screen name="ai-analysis" options={{ headerShown: false }} />
             <Stack.Screen name="report-submitted" options={{ headerShown: false, animation: 'fade', gestureEnabled: false }} />

@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { CivicCareColors, Spacing, BorderRadius, Shadows, getReportStatusStyles } from '@/constants/theme';
 import { useReports } from '@/services/reportsStore';
-import { useUser } from '@/services/clerk';
+import { useUser, useAuth } from '@/services/auth';
 import { useAppTheme } from '@/services/themeContext';
 import {
   getShortCityName,
@@ -90,6 +90,24 @@ export default function HomeScreen() {
     }
     return true;
   });
+
+  const { isSignedIn } = useAuth();
+
+  const handleReportIssuePress = () => {
+    const isRealCitizen = isSignedIn && user && user.id && user.id !== 'guest_citizen';
+    if (!isRealCitizen) {
+      Alert.alert(
+        'Sign In Required',
+        'Please sign in or create an account to file and track civic issues.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => router.push('/auth') },
+        ]
+      );
+      return;
+    }
+    router.push('/report-issue');
+  };
 
   const handleCategoryPress = (categoryName: string) => {
     if (filterCategory === categoryName) {
@@ -171,7 +189,7 @@ export default function HomeScreen() {
         <TouchableOpacity
           style={styles.reportActionButton}
           activeOpacity={0.9}
-          onPress={() => router.push('/report-issue')}>
+          onPress={handleReportIssuePress}>
           <View style={styles.cameraIconBadge}>
             <Camera size={20} color="#FFFFFF" />
           </View>

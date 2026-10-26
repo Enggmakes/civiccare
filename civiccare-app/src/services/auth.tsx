@@ -139,18 +139,10 @@ export function CivicCareAuthProvider({ children }: { children: React.ReactNode 
         mapSupabaseUser(data.session.user);
         setIsSignedIn(true);
         setSessionId(data.session.access_token);
-        await safeStorage.removeItem('@civiccare_guest_mode');
       } else if (!cachedUserStr) {
-        // Fallback to guest mode only if no citizen was signed in
-        const isGuest = await safeStorage.getItem('@civiccare_guest_mode');
-        if (isGuest === 'true') {
-          const savedGuestWard = await safeStorage.getItem('@civiccare_guest_ward');
-          setUser({
-            ...GUEST_CITIZEN,
-            ward: savedGuestWard || GUEST_CITIZEN.ward,
-          });
-          setIsSignedIn(true);
-        }
+        setUser(null);
+        setIsSignedIn(false);
+        setSessionId(null);
       }
     } catch (e) {
       console.warn('Session init check failed:', e);

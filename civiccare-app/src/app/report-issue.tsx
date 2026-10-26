@@ -32,12 +32,16 @@ import {
   AlertTriangle,
 } from 'lucide-react-native';
 
+import { useAuth, useUser } from '@/services/auth';
+
 const { width } = Dimensions.get('window');
 
 export default function ReportIssueScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isDark, colors } = useAppTheme();
+  const { isSignedIn, isLoaded } = useAuth();
+  const { user } = useUser();
   
   // Real dynamic states - completely empty by default
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -49,6 +53,23 @@ export default function ReportIssueScreen() {
   const [isLocating, setIsLocating] = useState<boolean>(true);
   const [isCustomAddress, setIsCustomAddress] = useState<boolean>(false);
   const [manualAddressInput, setManualAddressInput] = useState<string>('');
+
+  // Gate: Unauthenticated / guest users are immediately brought to sign in
+  useEffect(() => {
+    if (!isLoaded) return;
+    const isRealCitizen = isSignedIn && user && user.id && user.id !== 'guest_citizen';
+    if (!isRealCitizen) {
+      Alert.alert(
+        'Sign In Required',
+        'Please sign in or create an account to file and track civic issues.',
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => router.replace('/welcome') },
+          { text: 'Sign In', onPress: () => router.replace('/auth') },
+        ]
+      );
+      router.replace('/welcome');
+    }
+  }, [isLoaded, isSignedIn, user]);
 
   useEffect(() => {
     fetchCurrentLocation();

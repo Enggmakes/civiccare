@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Image,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -50,6 +51,21 @@ export default function MyReportsScreen() {
     return true;
   });
 
+  const handleNewReportPress = () => {
+    if (isGuest) {
+      Alert.alert(
+        'Sign In Required',
+        'Please sign in or create an account to submit and track civic reports.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Sign In', onPress: () => router.push('/auth') },
+        ]
+      );
+      return;
+    }
+    router.push('/report-issue');
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }, isDark && { backgroundColor: colors.background }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
@@ -60,7 +76,7 @@ export default function MyReportsScreen() {
         <TouchableOpacity
           style={styles.newReportButton}
           activeOpacity={0.8}
-          onPress={() => router.push('/report-issue')}>
+          onPress={handleNewReportPress}>
           <Plus size={18} color="#FFFFFF" />
           <Text style={styles.newReportButtonText}>New</Text>
         </TouchableOpacity>
@@ -116,12 +132,22 @@ export default function MyReportsScreen() {
         }>
         {filtered.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyTitle, isDark && { color: colors.text }]}>No reports found</Text>
+            <Text style={[styles.emptyTitle, isDark && { color: colors.text }]}>
+              {isGuest ? 'Sign In to View Reports' : 'No reports found'}
+            </Text>
             <Text style={[styles.emptySubtext, isDark && { color: colors.textSecondary }]}>
               {isGuest
-                ? 'You have not filed any reports in Guest mode yet.'
+                ? 'Please sign in with your citizen account to submit, track, and manage civic issues.'
                 : `You have no ${activeTab.toLowerCase()} reports filed under your account.`}
             </Text>
+            {isGuest && (
+              <TouchableOpacity
+                style={styles.signInGateBtn}
+                activeOpacity={0.85}
+                onPress={() => router.push('/auth')}>
+                <Text style={styles.signInGateBtnText}>Sign In to CivicCare</Text>
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
           filtered.map(report => (
@@ -362,5 +388,20 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 14,
     color: CivicCareColors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: Spacing.four,
+  },
+  signInGateBtn: {
+    marginTop: Spacing.four,
+    backgroundColor: CivicCareColors.brandPrimary,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: BorderRadius.full,
+    ...Shadows.sm,
+  },
+  signInGateBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

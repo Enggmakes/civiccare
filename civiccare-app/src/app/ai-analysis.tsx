@@ -182,11 +182,21 @@ export default function AIAnalysisScreen() {
         }
       }
 
-      // Determine author ID and metadata for robust user report isolation
-      const isGuest = !isSignedIn || !user || user.id === 'guest_citizen';
-      const authorUserId = isGuest ? 'guest_citizen' : user.id;
-      const authorName = isGuest ? 'Guest Citizen' : (user?.fullName || user?.firstName || 'Citizen');
-      const authorEmail = isGuest ? '' : (user?.primaryEmailAddress?.emailAddress || '');
+      // Check authentication: Guests are brought to signin/welcome
+      const isGuest = !isSignedIn || !user || !user.id || user.id === 'guest_citizen';
+      if (isGuest) {
+        Alert.alert(
+          'Sign In Required',
+          'Please sign in or create an account to submit a civic report.',
+          [{ text: 'Sign In', onPress: () => router.replace('/auth') }]
+        );
+        router.replace('/welcome');
+        return;
+      }
+
+      const authorUserId = user.id;
+      const authorName = user.fullName || user.firstName || 'Citizen';
+      const authorEmail = user.primaryEmailAddress?.emailAddress || '';
 
       // Commit report to store and live Supabase
       const created = await addReport({

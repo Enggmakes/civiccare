@@ -127,7 +127,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: 'column',
     position: 'sticky',
     top: 0,
-    zIndex: 30,
+    zIndex: 1050,
     transition: 'background-color 0.2s ease, border-color 0.2s ease',
   },
   brandContainer: {

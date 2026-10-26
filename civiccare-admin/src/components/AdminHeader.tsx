@@ -41,6 +41,23 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   const [showDeptDropdown, setShowDeptDropdown] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
 
+  const deptRef = React.useRef<HTMLDivElement>(null);
+  const notifyRef = React.useRef<HTMLDivElement>(null);
+
+  // Close dropdowns when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notifyRef.current && !notifyRef.current.contains(e.target as Node)) {
+        setShowNotifications(false);
+      }
+      if (deptRef.current && !deptRef.current.contains(e.target as Node)) {
+        setShowDeptDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const pendingCount = reports.filter((r) => r.status === 'Pending').length;
   const criticalCount = reports.filter((r) => r.severity === 'High' || r.severity === 'Critical').length;
 
@@ -48,7 +65,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     <header style={styles.header}>
       {/* Left: Service Domain Switcher */}
       <div style={styles.leftSection}>
-        <div style={styles.deptSelectorWrapper}>
+        <div ref={deptRef} style={styles.deptSelectorWrapper}>
           <button
             onClick={() => setShowDeptDropdown(!showDeptDropdown)}
             style={styles.deptButton}>
@@ -107,7 +124,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
       {/* Right Section: Notifications & Admin Profile */}
       <div style={styles.rightSection}>
         {/* Notification Bell */}
-        <div style={styles.notifyWrapper}>
+        <div ref={notifyRef} style={styles.notifyWrapper}>
           <button
             onClick={() => setShowNotifications(!showNotifications)}
             style={styles.iconButton}
@@ -182,7 +199,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0 28px',
     position: 'sticky',
     top: 0,
-    zIndex: 25,
+    zIndex: 1000,
     gap: '20px',
   },
   leftSection: {
@@ -239,7 +256,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--border-light)',
     boxShadow: 'var(--shadow-lg)',
     padding: '6px',
-    zIndex: 50,
+    zIndex: 1100,
     display: 'flex',
     flexDirection: 'column',
     gap: '2px',
@@ -344,7 +361,7 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--border-light)',
     boxShadow: 'var(--shadow-xl)',
     overflow: 'hidden',
-    zIndex: 50,
+    zIndex: 1100,
   },
   notifyHeader: {
     padding: '14px 16px',

@@ -379,6 +379,8 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: 'wrap',
     gap: '16px',
     boxShadow: 'var(--shadow-sm)',
+    position: 'relative',
+    zIndex: 5,
   },
   filtersRow: {
     display: 'flex',
@@ -432,6 +434,8 @@ const styles: Record<string, React.CSSProperties> = {
     border: '1px solid var(--border-light)',
     boxShadow: 'var(--shadow-md)',
     position: 'relative',
+    zIndex: 1,
+    isolation: 'isolate',
   },
   popupCard: {
     width: '240px',

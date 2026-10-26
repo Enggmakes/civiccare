@@ -260,7 +260,19 @@ body {
 
 .custom-category-map-pin:hover {
   transform: translateY(-2px) scale(1.1);
-  z-index: 1000 !important;
+  z-index: 50 !important;
+}
+
+/* Permanently isolate Leaflet maps and all internal panes into a low stacking context */
+.leaflet-container {
+  z-index: 1 !important;
+  isolation: isolate;
+  position: relative;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 10 !important;
 }
 
 /* Full-Screen Edge-to-Edge Admin Login (Matching Screen 18) */

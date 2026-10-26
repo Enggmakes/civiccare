@@ -38,52 +38,144 @@ function MapAutoCenter({ reports }: { reports: CivicReport[] }) {
   return null;
 }
 
-// Custom Leaflet SVG Map Pin generator
-const createPinIcon = (status: string, severity: string) => {
-  let color = '#0284C7'; // In-Progress blue
-  if (status === 'Resolved' || status === 'Closed') color = '#10B981'; // Green
+// 9 Official Issue Categories matching Mobile App with Flaticons & Unique Colors
+export const CATEGORY_META: Record<string, { color: string; icon: string; label: string }> = {
+  Pothole: {
+    color: '#0066FF',
+    icon: '/assets/categories/pothole.png',
+    label: 'Pothole',
+  },
+  Garbage: {
+    color: '#10B981',
+    icon: '/assets/categories/garbage.png',
+    label: 'Garbage',
+  },
+  Streetlight: {
+    color: '#F59E0B',
+    icon: '/assets/categories/streetlight.png',
+    label: 'Streetlight',
+  },
+  'Water Leak': {
+    color: '#06B6D4',
+    icon: '/assets/categories/water_leak.png',
+    label: 'Water Leak',
+  },
+  'Broken Road': {
+    color: '#8B5CF6',
+    icon: '/assets/categories/broken_road.png',
+    label: 'Broken Road',
+  },
+  Sewage: {
+    color: '#92400E',
+    icon: '/assets/categories/sewage.png',
+    label: 'Sewage',
+  },
+  'Illegal Dumping': {
+    color: '#EA580C',
+    icon: '/assets/categories/illegal_dumping.png',
+    label: 'Illegal Dumping',
+  },
+  Encroachment: {
+    color: '#E11D48',
+    icon: '/assets/categories/encroachment.png',
+    label: 'Encroachment',
+  },
+  Others: {
+    color: '#64748B',
+    icon: '/assets/categories/others.png',
+    label: 'Others',
+  },
+};
+
+export const getCategoryMeta = (categoryName: string) => {
+  if (!categoryName) return CATEGORY_META['Others'];
+  const foundKey = Object.keys(CATEGORY_META).find(
+    (k) => k.toLowerCase() === categoryName.toLowerCase() || categoryName.toLowerCase().includes(k.toLowerCase())
+  );
+  return foundKey ? CATEGORY_META[foundKey] : CATEGORY_META['Others'];
+};
+
+// Custom Leaflet SVG Map Pin generator with Flaticon inside and distinct category colors
+const createPinIcon = (category: string, status: string, severity: string) => {
+  const meta = getCategoryMeta(category);
+
+  // Status indicator ring / dot color
+  let statusColor = '#0284C7'; // In-Progress
+  if (status === 'Resolved' || status === 'Closed') statusColor = '#10B981';
   else if (status === 'Pending' || status === 'Submitted') {
-    color = severity === 'High' ? '#DC2626' : '#F59E0B'; // Red or Amber
+    statusColor = severity === 'High' ? '#DC2626' : '#F59E0B';
   }
 
   const svgHtml = `
     <div style="
       position: relative;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
+      width: 44px;
+      height: 52px;
+      cursor: pointer;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.28));
+      transition: transform 0.18s ease;
     ">
+      <!-- Head Circle with category border and white center -->
       <div style="
-        width: 32px;
-        height: 32px;
-        background-color: ${color};
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.35);
-        border: 2px solid #FFFFFF;
+        position: relative;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #FFFFFF;
+        border: 3px solid ${meta.color};
         display: flex;
         align-items: center;
         justify-content: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+        box-sizing: border-box;
       ">
-        <div style="
-          width: 10px;
-          height: 10px;
-          background-color: #FFFFFF;
+        <img
+          src="${meta.icon}"
+          alt="${meta.label}"
+          style="
+            width: 22px;
+            height: 22px;
+            object-fit: contain;
+            display: block;
+            pointer-events: none;
+          "
+        />
+        <!-- Status indicator badge on top right -->
+        <span style="
+          position: absolute;
+          top: -3px;
+          right: -3px;
+          width: 11px;
+          height: 11px;
           border-radius: 50%;
-          transform: rotate(45deg);
-        "></div>
+          background-color: ${statusColor};
+          border: 2px solid #FFFFFF;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+          display: block;
+        "></span>
       </div>
+
+      <!-- Pointing Triangle Anchor -->
+      <div style="
+        width: 0;
+        height: 0;
+        border-left: 6px solid transparent;
+        border-right: 6px solid transparent;
+        border-top: 8px solid ${meta.color};
+        margin-top: -2px;
+      "></div>
     </div>
   `;
 
   return L.divIcon({
     html: svgHtml,
-    className: 'custom-map-pin',
-    iconSize: [36, 36],
-    iconAnchor: [18, 36],
-    popupAnchor: [0, -36],
+    className: 'custom-category-map-pin',
+    iconSize: [44, 52],
+    iconAnchor: [22, 52],
+    popupAnchor: [0, -50],
   });
 };
 
@@ -173,19 +265,23 @@ export const MapView: React.FC<MapViewProps> = ({
           </div>
         </div>
 
-        {/* Legend */}
+        {/* Legend showing category flaticons */}
         <div style={styles.legendRow}>
           <div style={styles.legendItem}>
-            <span style={{ ...styles.legendDot, backgroundColor: '#DC2626' }} />
-            <span>Pending (Critical)</span>
+            <img src="/assets/categories/garbage.png" alt="Garbage" style={{ width: '15px', height: '15px', objectFit: 'contain' }} />
+            <span>Garbage (#10B981)</span>
           </div>
           <div style={styles.legendItem}>
-            <span style={{ ...styles.legendDot, backgroundColor: '#0284C7' }} />
-            <span>In-Progress</span>
+            <img src="/assets/categories/streetlight.png" alt="Streetlight" style={{ width: '15px', height: '15px', objectFit: 'contain' }} />
+            <span>Streetlight (#F59E0B)</span>
           </div>
           <div style={styles.legendItem}>
-            <span style={{ ...styles.legendDot, backgroundColor: '#10B981' }} />
-            <span>Resolved</span>
+            <img src="/assets/categories/pothole.png" alt="Pothole" style={{ width: '15px', height: '15px', objectFit: 'contain' }} />
+            <span>Pothole (#0066FF)</span>
+          </div>
+          <div style={styles.legendItem}>
+            <img src="/assets/categories/water_leak.png" alt="Water" style={{ width: '15px', height: '15px', objectFit: 'contain' }} />
+            <span>Water Leak (#06B6D4)</span>
           </div>
           <div style={styles.pinsCounter}>
             <span>{filteredReports.length} Map Markers</span>
@@ -211,7 +307,7 @@ export const MapView: React.FC<MapViewProps> = ({
             <Marker
               key={report.id}
               position={[report.latitude || 19.1197, report.longitude || 72.8397]}
-              icon={createPinIcon(report.status, report.severity)}>
+              icon={createPinIcon(report.category_id, report.status, report.severity)}>
               <Popup className="custom-popup">
                 {/* Popup Card matching Screen 21 */}
                 <div style={styles.popupCard}>
@@ -236,7 +332,14 @@ export const MapView: React.FC<MapViewProps> = ({
                         }}>
                         {report.severity}
                       </span>
-                      <span style={styles.popupCategory}>{report.category_id}</span>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                        <img
+                          src={getCategoryMeta(report.category_id).icon}
+                          alt={report.category_id}
+                          style={{ width: '16px', height: '16px', objectFit: 'contain' }}
+                        />
+                        <span style={styles.popupCategory}>{report.category_id}</span>
+                      </div>
                     </div>
 
                     <p style={styles.popupAddress}>{report.formatted_address}</p>

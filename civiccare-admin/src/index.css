@@ -252,6 +252,17 @@ body {
   }
 }
 
+/* Custom Category Map Pin styling */
+.custom-category-map-pin {
+  background: transparent !important;
+  border: none !important;
+}
+
+.custom-category-map-pin:hover {
+  transform: translateY(-2px) scale(1.1);
+  z-index: 1000 !important;
+}
+
 /* Full-Screen Edge-to-Edge Admin Login (Matching Screen 18) */
 .login-split-page {
   display: flex;

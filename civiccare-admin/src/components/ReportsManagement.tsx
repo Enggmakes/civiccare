@@ -75,7 +75,7 @@ export const ReportsManagement: React.FC<ReportsManagementProps> = ({
         <div>
           <h2 style={styles.pageTitle}>Reports Management</h2>
           <p style={styles.pageSubtitle}>
-            Review, prioritize, and dispatch municipal civic grievances in real time
+            Review, verify, and escalate citizen civic grievances in real time
           </p>
         </div>
         <button onClick={handleExportCSV} style={styles.exportButton}>

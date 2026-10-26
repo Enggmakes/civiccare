@@ -22,11 +22,11 @@ interface AdminHeaderProps {
 }
 
 const DEPARTMENTS = [
-  'All Departments',
-  'Road Maintenance Dept.',
-  'Solid Waste Management Dept.',
-  'Electrical & Lighting Dept.',
-  'Water Supply Dept.',
+  'All Categories & Services',
+  'Road Maintenance',
+  'Solid Waste Management',
+  'Electrical & Lighting',
+  'Water Supply & Drainage',
 ];
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
@@ -46,7 +46,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
 
   return (
     <header style={styles.header}>
-      {/* Left: Department Switcher matching Screen 19 */}
+      {/* Left: Service Domain Switcher */}
       <div style={styles.leftSection}>
         <div style={styles.deptSelectorWrapper}>
           <button
@@ -56,7 +56,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
               <Building size={16} color="var(--brand-primary)" />
             </div>
             <div style={styles.deptTextCol}>
-              <span style={styles.deptLabel}>Active Department</span>
+              <span style={styles.deptLabel}>Service Domain</span>
               <span style={styles.deptCurrent}>{selectedDepartment}</span>
             </div>
             <ChevronDown size={16} color="var(--text-muted)" />

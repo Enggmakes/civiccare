@@ -20,7 +20,7 @@ import { UpdateReportDrawer } from './components/UpdateReportDrawer';
 export function App() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('All Departments');
+  const [selectedDepartment, setSelectedDepartment] = useState<string>('All Categories & Services');
   const [reports, setReports] = useState<CivicReport[]>(SEED_REPORTS);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedReport, setSelectedReport] = useState<CivicReport | null>(null);
@@ -52,11 +52,11 @@ export function App() {
               category_id: newRow.category_id,
               severity: newRow.severity || 'Medium',
               status: newRow.status || 'Pending',
-              formatted_address: newRow.formatted_address || 'Municipal Ward Area',
+              formatted_address: newRow.formatted_address || 'City Ward Area',
               latitude: newRow.latitude || 19.076,
               longitude: newRow.longitude || 72.8777,
               primary_image_url: newRow.primary_image_url || 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=800&auto=format&fit=crop&q=80',
-              department_name: newRow.department_name || 'Municipal Engineering Dept.',
+              department_name: newRow.department_name || 'Road Maintenance & Infrastructure',
               subscriber_count: newRow.subscriber_count || 1,
               ai_confidence: newRow.ai_confidence ? parseFloat(newRow.ai_confidence) : 0.94,
               created_at: newRow.created_at || new Date().toISOString(),
@@ -220,7 +220,7 @@ export function App() {
                 Portal Settings & Integrations
               </h2>
               <p style={{ color: 'var(--text-muted)', marginBottom: '24px' }}>
-                Manage municipal API gateways, PostGIS spatial clusters, and automated triage rules.
+                Manage civic grievance API gateways, PostGIS spatial clusters, and automated triage rules.
               </p>
               <div
                 style={{

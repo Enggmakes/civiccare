@@ -50,9 +50,9 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
       {/* Header */}
       <div style={styles.header}>
         <div>
-          <h2 style={styles.pageTitle}>Analytics & Department Redressal</h2>
+          <h2 style={styles.pageTitle}>Platform Analytics & Resolution Metrics</h2>
           <p style={styles.pageSubtitle}>
-            Cross-department resolution velocity, SLA benchmarks, and monthly grievance patterns
+            Cross-service resolution velocity, SLA benchmarks, and monthly grievance patterns
           </p>
         </div>
         <div style={styles.dateBadge}>

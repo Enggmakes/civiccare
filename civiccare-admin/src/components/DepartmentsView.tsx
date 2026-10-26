@@ -13,8 +13,8 @@ const DEPARTMENTS = [
   {
     id: 'road',
     name: 'Road Maintenance Dept.',
-    head: "John D'Souza (Chief Engineer)",
-    email: 'roads@municipal.gov.in',
+    head: "John D'Souza (Platform Domain Lead)",
+    email: 'roads@civiccare.com',
     sla: '48 Hours',
     activeTickets: 142,
     resolvedTickets: 512,
@@ -26,8 +26,8 @@ const DEPARTMENTS = [
   {
     id: 'waste',
     name: 'Solid Waste Management Dept.',
-    head: 'Sunita Deshmukh (Health Officer)',
-    email: 'waste@municipal.gov.in',
+    head: 'Sunita Deshmukh (Waste Operations Desk)',
+    email: 'waste@civiccare.com',
     sla: '24 Hours',
     activeTickets: 89,
     resolvedTickets: 420,
@@ -39,8 +39,8 @@ const DEPARTMENTS = [
   {
     id: 'lighting',
     name: 'Electrical & Lighting Dept.',
-    head: 'Amitabh Sen (Executive Engineer)',
-    email: 'lighting@municipal.gov.in',
+    head: 'Amitabh Sen (Utility Grid Triage)',
+    email: 'lighting@civiccare.com',
     sla: '36 Hours',
     activeTickets: 64,
     resolvedTickets: 298,
@@ -52,8 +52,8 @@ const DEPARTMENTS = [
   {
     id: 'water',
     name: 'Water Supply Dept.',
-    head: 'Vikram Joshi (Hydraulic Dept)',
-    email: 'water@municipal.gov.in',
+    head: 'Vikram Joshi (Hydrology & Pipelines Triage)',
+    email: 'water@civiccare.com',
     sla: '24 Hours',
     activeTickets: 47,
     resolvedTickets: 184,
@@ -65,8 +65,8 @@ const DEPARTMENTS = [
   {
     id: 'planning',
     name: 'Town Planning & Encroachment',
-    head: 'Kavita Rane (Deputy Commissioner)',
-    email: 'planning@municipal.gov.in',
+    head: 'Kavita Rane (Zoning & Civic Escalations)',
+    email: 'planning@civiccare.com',
     sla: '72 Hours',
     activeTickets: 28,
     resolvedTickets: 96,
@@ -84,9 +84,9 @@ export const DepartmentsView: React.FC<DepartmentsViewProps> = ({
     <div style={styles.container}>
       <div style={styles.header}>
         <div>
-          <h2 style={styles.pageTitle}>Municipal Departments Directory</h2>
+          <h2 style={styles.pageTitle}>Service Categories & Escalation Directory</h2>
           <p style={styles.pageSubtitle}>
-            Departmental SLAs, active dispatch units, and civic resolution capacities
+            Category SLAs, domain triage desks, and escalation routing to local authorities & field contractors
           </p>
         </div>
       </div>

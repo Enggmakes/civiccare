@@ -24,12 +24,12 @@ interface UpdateReportDrawerProps {
 }
 
 const FIELD_STAFF = [
-  "John D'Souza (Senior Road Inspector)",
-  'Ramesh Patil (Sanitation Supervisor)',
-  'Priya Sharma (Electrical Engineer)',
-  'Vikram Joshi (Hydraulic / Water Dept)',
-  'Sunil Naik (Ward Maintenance Officer)',
-  'Kavita Rane (Chief Health Inspector)',
+  'Rajesh Kulkarni (Platform Operations Lead)',
+  'Suresh More (Roads & Infrastructure Triage)',
+  'Sunita Deshmukh (Sanitation Operations Desk)',
+  'Priya Sharma (Public Lighting Liaison)',
+  'Vikram Joshi (Water & Drainage Liaison)',
+  'CivicCare Field Quality Auditor',
 ];
 
 export const UpdateReportDrawer: React.FC<UpdateReportDrawerProps> = ({

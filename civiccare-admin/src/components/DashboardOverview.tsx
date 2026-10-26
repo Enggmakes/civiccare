@@ -254,7 +254,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         <div style={styles.recentHeader}>
           <div>
             <h3 style={styles.recentTitle}>Live Grievances Stream</h3>
-            <p style={styles.recentSubtitle}>Real-time citizen submissions requiring municipal action</p>
+            <p style={styles.recentSubtitle}>Real-time citizen reports monitored for verification and escalation</p>
           </div>
           <button onClick={onViewAllReports} style={styles.viewAllButton}>
             <span>View All Reports</span>

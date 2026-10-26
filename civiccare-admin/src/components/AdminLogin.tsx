@@ -1,48 +1,22 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Building2, Sparkles, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck } from 'lucide-react';
 import type { AdminUser } from '../types';
 
 interface AdminLoginProps {
   onLoginSuccess: (user: AdminUser) => void;
 }
 
-const PRESET_USERS: AdminUser[] = [
-  {
-    id: 'admin-01',
-    name: 'Rajesh Kulkarni',
-    email: 'admin@municipal.gov.in',
-    role: 'superadmin',
-    department: 'Municipal Corporation HQ',
-    avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'admin-02',
-    name: 'Suresh More',
-    email: 'roads@municipal.gov.in',
-    role: 'dept_admin',
-    department: 'Road Maintenance Dept.',
-    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'admin-03',
-    name: 'Sunita Deshmukh',
-    email: 'sanitation@municipal.gov.in',
-    role: 'dept_admin',
-    department: 'Solid Waste Management Dept.',
-    avatar_url: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'admin-04',
-    name: 'Amitabh Sen',
-    email: 'electrical@municipal.gov.in',
-    role: 'dept_admin',
-    department: 'Electrical & Lighting Dept.',
-    avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-  },
-];
+const DEFAULT_ADMIN: AdminUser = {
+  id: 'admin-01',
+  name: 'Rajesh Kulkarni',
+  email: 'admin@civiccare.com',
+  role: 'superadmin',
+  department: 'Platform Operations HQ',
+  avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+};
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
-  const [email, setEmail] = useState('admin@municipal.gov.in');
+  const [email, setEmail] = useState('admin@civiccare.com');
   const [password, setPassword] = useState('Password');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -60,30 +34,26 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 
     setLoading(true);
     setTimeout(() => {
-      const matchedUser = PRESET_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase());
-      const userToLogin: AdminUser = matchedUser || {
-        id: 'admin-officer',
-        name: email.split('@')[0].toUpperCase(),
-        email: email,
-        role: 'dept_admin',
-        department: 'Municipal Operations Unit',
-        avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-      };
+      const userToLogin: AdminUser =
+        email.toLowerCase() === DEFAULT_ADMIN.email.toLowerCase()
+          ? DEFAULT_ADMIN
+          : {
+              id: 'admin-officer',
+              name: email.split('@')[0].toUpperCase(),
+              email: email,
+              role: 'dept_admin',
+              department: 'CivicCare Platform Operations',
+              avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+            };
 
       setLoading(false);
       onLoginSuccess(userToLogin);
-    }, 400);
-  };
-
-  const handleSelectPreset = (preset: AdminUser) => {
-    setEmail(preset.email);
-    setPassword('Password');
-    setError('');
+    }, 350);
   };
 
   return (
     <div className="login-split-page">
-      {/* Left Side: Exact aspect ratio matching civiccare_first_welcome_web.png with zero crop */}
+      {/* Left Side: Exact aspect ratio matching first_welcome_web.png with zero crop */}
       <div className="login-left-banner">
         <img
           src="/assets/first_welcome_web.png"
@@ -95,10 +65,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
       {/* Right Side: Clean White Full-Screen Section for Form */}
       <div className="login-right-form">
         <div style={styles.formContainer}>
-          {/* Header matching Screen 18 */}
+          {/* Header */}
           <div style={styles.headerBlock}>
             <h1 style={styles.welcomeTitle}>Welcome Back</h1>
-            <p style={styles.welcomeSubtitle}>Sign in to your department account</p>
+            <p style={styles.welcomeSubtitle}>Sign in to CivicCare Operations Hub</p>
           </div>
 
           {error && <div style={styles.errorBox}>{error}</div>}
@@ -106,14 +76,14 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
           <form onSubmit={handleSubmit} style={styles.form}>
             {/* Email Field */}
             <div style={styles.inputGroup}>
-              <label style={styles.label}>Email</label>
+              <label style={styles.label}>Email Address</label>
               <div style={styles.inputWrapper}>
                 <Mail size={18} color="#94A3B8" style={styles.inputIcon} />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@municipal.gov.in"
+                  placeholder="admin@civiccare.com"
                   required
                   style={styles.textInput}
                 />
@@ -129,7 +99,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
+                  placeholder="••••••••"
                   required
                   style={styles.textInput}
                 />
@@ -137,7 +107,8 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   style={styles.eyeBtn}
-                  tabIndex={-1}>
+                  tabIndex={-1}
+                  aria-label="Toggle password visibility">
                   {showPassword ? <EyeOff size={18} color="#94A3B8" /> : <Eye size={18} color="#94A3B8" />}
                 </button>
               </div>
@@ -157,13 +128,13 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 
               <button
                 type="button"
-                onClick={() => alert('Password reset link sent to registered municipal email.')}
+                onClick={() => alert('Password reset instructions have been sent to your administrator email.')}
                 style={styles.forgotBtn}>
                 Forgot password?
               </button>
             </div>
 
-            {/* Primary Sign In Button matching Screen 18 */}
+            {/* Primary Sign In Button */}
             <button
               type="submit"
               disabled={loading}
@@ -181,35 +152,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
             </button>
           </form>
 
-          {/* Quick Demo Department Shortcuts */}
-          <div style={styles.demoSection}>
-            <div style={styles.demoTitle}>
-              <Sparkles size={14} color="#0066FF" />
-              <span>Quick Demo Department Access:</span>
-            </div>
-            <div style={styles.presetList}>
-              {PRESET_USERS.map((user) => (
-                <button
-                  key={user.id}
-                  type="button"
-                  onClick={() => handleSelectPreset(user)}
-                  style={{
-                    ...styles.presetPill,
-                    backgroundColor: email === user.email ? '#EFF6FF' : '#F8FAFC',
-                    borderColor: email === user.email ? '#0066FF' : '#E2E8F0',
-                    color: email === user.email ? '#0066FF' : '#334155',
-                  }}>
-                  <Building2 size={13} color={email === user.email ? '#0066FF' : '#64748B'} />
-                  <span>{user.department.replace(' Dept.', '').replace(' Department', '')}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Security note */}
           <div style={styles.securityNote}>
             <ShieldCheck size={14} color="#10B981" />
-            <span>GovNet 256-bit Encrypted Session · ISO/IEC 27001 Certified Municipal Portal</span>
+            <span>CivicCare Secure Operations Platform · 256-bit SSL Protected</span>
           </div>
         </div>
       </div>
@@ -220,7 +166,7 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 const styles: Record<string, React.CSSProperties> = {
   formContainer: {
     width: '100%',
-    maxWidth: '440px',
+    maxWidth: '420px',
     display: 'flex',
     flexDirection: 'column',
   },
@@ -343,42 +289,11 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: '6px',
-    transition: 'all 0.15s ease',
-  },
-  demoSection: {
-    marginTop: '32px',
-    paddingTop: '22px',
-    borderTop: '1px solid #F1F5F9',
-  },
-  demoTitle: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: '12px',
-    fontWeight: '700',
-    color: '#475569',
-    marginBottom: '10px',
-  },
-  presetList: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '8px',
-  },
-  presetPill: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '7px 11px',
-    borderRadius: '8px',
-    border: '1px solid #E2E8F0',
-    fontSize: '11px',
-    fontWeight: '600',
-    cursor: 'pointer',
+    marginTop: '8px',
     transition: 'all 0.15s ease',
   },
   securityNote: {
-    marginTop: '28px',
+    marginTop: '36px',
     display: 'flex',
     alignItems: 'center',
     gap: '6px',

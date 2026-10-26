@@ -32,9 +32,9 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 }) => {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'reports', label: 'Reports', icon: ClipboardList },
-    { id: 'map', label: 'Map View', icon: MapPin },
-    { id: 'departments', label: 'Departments', icon: Building2 },
+    { id: 'reports', label: 'Citizen Reports', icon: ClipboardList },
+    { id: 'map', label: 'City Map Radar', icon: MapPin },
+    { id: 'departments', label: 'Service Categories', icon: Building2 },
     { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'settings', label: 'Settings', icon: Settings },
   ];
@@ -52,7 +52,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
         </div>
         <div style={styles.brandTextGroup}>
           <div style={styles.brandName}>CivicCare</div>
-          <div style={styles.portalBadge}>Admin Portal</div>
+          <div style={styles.portalBadge}>Operations Hub</div>
         </div>
       </div>
 

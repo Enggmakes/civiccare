@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
+import { CivicCareColors, Spacing, BorderRadius, Shadows, getReportStatusStyles } from '@/constants/theme';
 import { useReports } from '@/services/reportsStore';
 import { useAppTheme } from '@/services/themeContext';
 import {
@@ -92,23 +92,28 @@ export default function ReportDetailsScreen() {
         <View style={styles.heroImageContainer}>
           <Image source={{ uri: report.image_url }} style={styles.heroImage} />
           
-          <View
-            style={[
-              styles.floatingStatusPill,
-              report.status === 'Resolved'
-                ? styles.statusResolved
-                : styles.statusInProgress,
-            ]}>
-            <Text
-              style={[
-                styles.floatingStatusText,
-                report.status === 'Resolved'
-                  ? styles.statusResolvedText
-                  : styles.statusInProgressText,
-              ]}>
-              {report.status}
-            </Text>
-          </View>
+          {(() => {
+            const badgeStyle = getReportStatusStyles(report.status, isDark);
+            return (
+              <View
+                style={[
+                  styles.floatingStatusPill,
+                  {
+                    backgroundColor: badgeStyle.bg,
+                    borderColor: badgeStyle.border,
+                    borderWidth: 1,
+                  },
+                ]}>
+                <Text
+                  style={[
+                    styles.floatingStatusText,
+                    { color: badgeStyle.text },
+                  ]}>
+                  {report.status}
+                </Text>
+              </View>
+            );
+          })()}
         </View>
 
         {/* Title & Ticket Number */}

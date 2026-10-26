@@ -117,15 +117,31 @@ export function CivicCareAuthProvider({ children }: { children: React.ReactNode 
     };
   }, []);
 
+  const USER_CACHE_KEY = '@civiccare_cached_user_profile_v1';
+
   const initAuthSession = async () => {
     try {
+      // 1. Immediately hydrate cached user profile to avoid dropping to guest during Expo Go reload
+      const cachedUserStr = await safeStorage.getItem(USER_CACHE_KEY);
+      if (cachedUserStr) {
+        try {
+          const cachedUser = JSON.parse(cachedUserStr);
+          if (cachedUser && cachedUser.id && cachedUser.id !== 'guest_citizen') {
+            setUser(cachedUser);
+            setIsSignedIn(true);
+          }
+        } catch {}
+      }
+
+      // 2. Validate/refresh session with Supabase Auth
       const { data, error } = await supabase.auth.getSession();
       if (!error && data?.session?.user) {
         mapSupabaseUser(data.session.user);
         setIsSignedIn(true);
         setSessionId(data.session.access_token);
-      } else {
-        // Check if citizen previously selected Guest mode
+        await safeStorage.removeItem('@civiccare_guest_mode');
+      } else if (!cachedUserStr) {
+        // Fallback to guest mode only if no citizen was signed in
         const isGuest = await safeStorage.getItem('@civiccare_guest_mode');
         if (isGuest === 'true') {
           const savedGuestWard = await safeStorage.getItem('@civiccare_guest_ward');
@@ -149,7 +165,7 @@ export function CivicCareAuthProvider({ children }: { children: React.ReactNode 
     const wardName = meta.ward || 'Ward K-West (Andheri West)';
     const phoneNum = meta.phone_number || meta.phone || sbUser.phone || '';
 
-    setUser({
+    const mappedUser: CitizenUser = {
       id: sbUser.id,
       fullName: fullName,
       firstName: fullName.split(' ')[0] || 'Citizen',
@@ -159,7 +175,10 @@ export function CivicCareAuthProvider({ children }: { children: React.ReactNode 
       imageUrl:
         meta.avatar_url ||
         'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
-    });
+    };
+
+    setUser(mappedUser);
+    safeStorage.setItem(USER_CACHE_KEY, JSON.stringify(mappedUser)).catch(() => {});
   };
 
   const signIn = async (
@@ -284,6 +303,7 @@ export function CivicCareAuthProvider({ children }: { children: React.ReactNode 
     try {
       await supabase.auth.signOut();
       await safeStorage.removeItem('@civiccare_guest_mode');
+      await safeStorage.removeItem(USER_CACHE_KEY);
     } catch (e) {
       // Ignore
     }

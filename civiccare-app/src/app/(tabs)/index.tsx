@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
+import { CivicCareColors, Spacing, BorderRadius, Shadows, getReportStatusStyles } from '@/constants/theme';
 import { useReports } from '@/services/reportsStore';
 import { useUser } from '@/services/clerk';
 import { useAppTheme } from '@/services/themeContext';
@@ -265,23 +265,28 @@ export default function HomeScreen() {
                     <Text style={[styles.reportTitle, isDark && { color: colors.text }]} numberOfLines={1}>
                       {report.title}
                     </Text>
-                    <View
-                      style={[
-                        styles.statusPill,
-                        report.status === 'Resolved'
-                          ? styles.statusResolved
-                          : styles.statusInProgress,
-                      ]}>
-                      <Text
-                        style={[
-                          styles.statusPillText,
-                          report.status === 'Resolved'
-                            ? styles.statusResolvedText
-                            : styles.statusInProgressText,
-                        ]}>
-                        {report.status}
-                      </Text>
-                    </View>
+                    {(() => {
+                      const badgeStyle = getReportStatusStyles(report.status, isDark);
+                      return (
+                        <View
+                          style={[
+                            styles.statusPill,
+                            {
+                              backgroundColor: badgeStyle.bg,
+                              borderColor: badgeStyle.border,
+                              borderWidth: 1,
+                            },
+                          ]}>
+                          <Text
+                            style={[
+                              styles.statusPillText,
+                              { color: badgeStyle.text },
+                            ]}>
+                            {report.status}
+                          </Text>
+                        </View>
+                      );
+                    })()}
                   </View>
 
                   <Text style={[styles.reportAddress, isDark && { color: colors.textSecondary }]} numberOfLines={1}>

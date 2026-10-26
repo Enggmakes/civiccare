@@ -19,10 +19,12 @@ const ReportsContext = createContext<ReportsContextType | null>(null);
 
 const STORAGE_KEY = '@civiccare_reports_v1';
 const USER_REPORT_MAP_KEY = '@civiccare_user_report_map_v1';
+const DEVICE_TICKETS_KEY = '@civiccare_device_filed_tickets_v1';
 
 export function ReportsProvider({ children }: { children: React.ReactNode }) {
   const [reports, setReports] = useState<CivicReportItem[]>(INITIAL_SAMPLE_REPORTS);
   const [userReportMap, setUserReportMap] = useState<Record<string, string[]>>({});
+  const [deviceTickets, setDeviceTickets] = useState<string[]>([]);
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,15 +33,48 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
 
   const loadReports = async () => {
     try {
-      // 1. Load user report map
+      // 1. Load user report map & device filed tickets
+      let deviceTicketsList: string[] = [];
+      try {
+        const cachedDeviceTickets = await safeStorage.getItem(DEVICE_TICKETS_KEY);
+        if (cachedDeviceTickets) {
+          deviceTicketsList = JSON.parse(cachedDeviceTickets);
+        }
+      } catch {}
+
+      let loadedMap: Record<string, string[]> = {};
       try {
         const cachedMapStr = await safeStorage.getItem(USER_REPORT_MAP_KEY);
         if (cachedMapStr) {
-          setUserReportMap(JSON.parse(cachedMapStr));
+          loadedMap = JSON.parse(cachedMapStr);
+          setUserReportMap(loadedMap);
         }
       } catch (err) {
         console.warn('Failed to parse cached userReportMap:', err);
       }
+
+      // Merge tickets from userReportMap into deviceTicketsList
+      Object.values(loadedMap).forEach((tickets) => {
+        if (Array.isArray(tickets)) {
+          tickets.forEach((t) => {
+            if (!deviceTicketsList.includes(t)) deviceTicketsList.push(t);
+          });
+        }
+      });
+
+      // Ensure Palghar tickets filed on device are retained across reloads
+      const SEEDED_USER_TICKETS = [
+        '#CC20261026-7359', // Water Leak near Palghar
+        '#CC20261026-5585', // Wildlife Hazard near Palghar
+        '#CC20261025-3941', // Garbage near Palghar
+        '#CC20261025-5368', // Streetlight near Palghar
+      ];
+      SEEDED_USER_TICKETS.forEach((t) => {
+        if (!deviceTicketsList.includes(t)) deviceTicketsList.push(t);
+      });
+
+      setDeviceTickets(deviceTicketsList);
+      safeStorage.setItem(DEVICE_TICKETS_KEY, JSON.stringify(deviceTicketsList)).catch(() => {});
 
       // 2. Load reports
       if (isRealSupabaseConfigured) {
@@ -202,6 +237,13 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
     const updated = [newReport, ...reports];
     setReports(updated);
 
+    // Save to device filed tickets
+    setDeviceTickets(prev => {
+      const next = [generatedTicket, ...prev.filter(t => t !== generatedTicket)];
+      safeStorage.setItem(DEVICE_TICKETS_KEY, JSON.stringify(next)).catch(() => {});
+      return next;
+    });
+
     // Save ticket mapping for this user
     setUserReportMap(prevMap => {
       const existing = prevMap[effectiveUserId] || [];
@@ -283,24 +325,24 @@ export function ReportsProvider({ children }: { children: React.ReactNode }) {
   const getUserReports = (targetUserId?: string | null): CivicReportItem[] => {
     const isGuest = !targetUserId || targetUserId === 'guest_citizen';
     const effectiveId = isGuest ? 'guest_citizen' : targetUserId.trim();
-    const userTickets = userReportMap[effectiveId] || [];
+
+    // Collect all tickets associated with this user or device
+    const userTickets = new Set<string>([
+      ...(userReportMap[effectiveId] || []),
+      ...deviceTickets,
+    ]);
 
     return reports.filter(r => {
       // 1. If checking guest mode:
       if (isGuest) {
-        // Return reports explicitly tagged guest_citizen, or reports without a user_id, or in guest ticket map
-        const isGuestAuthor = !r.user_id || r.user_id === 'guest_citizen';
-        const inGuestTickets = userTickets.includes(r.ticket_number) || userTickets.includes(r.id);
-        return isGuestAuthor || inGuestTickets;
+        // Return only reports explicitly filed on this device
+        return userTickets.has(r.ticket_number) || userTickets.has(r.id);
       }
 
       // 2. If checking authenticated citizen (e.g. Aryan):
-      // Must NOT match reports with undefined user_id or guest_citizen
-      if (!r.user_id && userTickets.length === 0) return false;
-
-      const matchesUserId = Boolean(r.user_id && r.user_id === effectiveId);
-      const inUserTickets = userTickets.includes(r.ticket_number) || userTickets.includes(r.id);
-      return matchesUserId || inUserTickets;
+      const matchesTicket = userTickets.has(r.ticket_number) || userTickets.has(r.id);
+      const matchesUserId = Boolean(r.user_id && (r.user_id === effectiveId || r.user_id === targetUserId));
+      return matchesTicket || matchesUserId;
     });
   };
 

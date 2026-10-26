@@ -40,6 +40,44 @@ export const CivicCareColors = {
   categoryOthers: '#64748B',
 } as const;
 
+export function getReportStatusStyles(status: string, isDark: boolean = false) {
+  const norm = (status || '').toLowerCase().trim();
+  if (norm.includes('resolve')) {
+    return {
+      bg: isDark ? 'rgba(22, 163, 74, 0.2)' : '#DCFCE7',
+      text: isDark ? '#4ADE80' : '#15803D',
+      border: isDark ? 'rgba(22, 163, 74, 0.4)' : '#86EFAC',
+    };
+  }
+  if (norm.includes('close')) {
+    return {
+      bg: isDark ? 'rgba(124, 58, 237, 0.2)' : '#EDE9FE',
+      text: isDark ? '#C084FC' : '#6D28D9',
+      border: isDark ? 'rgba(124, 58, 237, 0.4)' : '#DDD6FE',
+    };
+  }
+  if (norm.includes('progress')) {
+    return {
+      bg: isDark ? 'rgba(217, 119, 6, 0.2)' : '#FEF3C7',
+      text: isDark ? '#FBBF24' : '#B45309',
+      border: isDark ? 'rgba(217, 119, 6, 0.4)' : '#FDE68A',
+    };
+  }
+  if (norm.includes('duplicate')) {
+    return {
+      bg: isDark ? 'rgba(220, 38, 38, 0.2)' : '#FEE2E2',
+      text: isDark ? '#F87171' : '#B91C1C',
+      border: isDark ? 'rgba(220, 38, 38, 0.4)' : '#FCA5A5',
+    };
+  }
+  // Submitted / AI Verification / Sent to Department / Pending
+  return {
+    bg: isDark ? 'rgba(30, 96, 213, 0.2)' : '#EFF6FF',
+    text: isDark ? '#60A5FA' : '#1D4ED8',
+    border: isDark ? 'rgba(30, 96, 213, 0.4)' : '#BFDBFE',
+  };
+}
+
 export const Colors = {
   light: {
     text: CivicCareColors.textMain,

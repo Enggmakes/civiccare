@@ -102,7 +102,7 @@ export default function ProfileScreen() {
   // Dynamic Metrics isolated specifically for this logged-in citizen
   const totalSubmitted = myReports.length;
   const inProgressCount = myReports.filter(r => r.status === 'In Progress' || r.status === 'Submitted' || r.status === 'AI Classification' || r.status === 'Sent to Department').length;
-  const resolvedCount = myReports.filter(r => r.status === 'Resolved').length;
+  const resolvedCount = myReports.filter(r => r.status === 'Resolved' || r.status === 'Closed').length;
 
   const citizenName = user?.fullName || (isSignedIn ? 'Citizen' : 'Guest Citizen');
   const citizenWard = user?.ward || 'Palghar, Maharashtra';

@@ -61,7 +61,7 @@ export interface CivicReportItem {
   description: string;
   category: 'Pothole' | 'Garbage' | 'Streetlight' | 'Water Leak' | 'Broken Road' | 'Others';
   severity: 'Low' | 'Medium' | 'High' | 'Critical';
-  status: 'Submitted' | 'AI Classification' | 'Sent to Department' | 'In Progress' | 'Resolved';
+  status: 'Submitted' | 'AI Classification' | 'Sent to Department' | 'In Progress' | 'Resolved' | 'Closed' | 'Duplicate';
   location_address: string;
   latitude: number;
   longitude: number;

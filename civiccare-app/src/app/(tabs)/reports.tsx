@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { CivicCareColors, Spacing, BorderRadius, Shadows } from '@/constants/theme';
+import { CivicCareColors, Spacing, BorderRadius, Shadows, getReportStatusStyles } from '@/constants/theme';
 import { useReports } from '@/services/reportsStore';
 import { useUser, useAuth } from '@/services/auth';
 import { useAppTheme } from '@/services/themeContext';
@@ -35,9 +35,11 @@ export default function MyReportsScreen() {
   const currentUserId = isGuest ? 'guest_citizen' : user.id;
   const myReports = getUserReports(currentUserId);
 
+  const isResolvedOrClosed = (status: string) => status === 'Resolved' || status === 'Closed';
+
   const filtered = myReports.filter(r => {
-    if (activeTab === 'Active') return r.status !== 'Resolved';
-    if (activeTab === 'Resolved') return r.status === 'Resolved';
+    if (activeTab === 'Active') return !isResolvedOrClosed(r.status);
+    if (activeTab === 'Resolved') return isResolvedOrClosed(r.status);
     return true;
   });
 
@@ -80,9 +82,9 @@ export default function MyReportsScreen() {
               {
                 myReports.filter(r =>
                   tab === 'Active'
-                    ? r.status !== 'Resolved'
+                    ? !isResolvedOrClosed(r.status)
                     : tab === 'Resolved'
-                    ? r.status === 'Resolved'
+                    ? isResolvedOrClosed(r.status)
                     : true
                 ).length
               }
@@ -120,19 +122,28 @@ export default function MyReportsScreen() {
                   <Text style={[styles.title, isDark && { color: colors.text }]} numberOfLines={1}>
                     {report.title}
                   </Text>
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      report.status === 'Resolved' ? styles.bgResolved : styles.bgPending,
-                    ]}>
-                    <Text
-                      style={[
-                        styles.statusText,
-                        report.status === 'Resolved' ? styles.textResolved : styles.textPending,
-                      ]}>
-                      {report.status}
-                    </Text>
-                  </View>
+                  {(() => {
+                    const badgeStyle = getReportStatusStyles(report.status, isDark);
+                    return (
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          {
+                            backgroundColor: badgeStyle.bg,
+                            borderColor: badgeStyle.border,
+                            borderWidth: 1,
+                          },
+                        ]}>
+                        <Text
+                          style={[
+                            styles.statusText,
+                            { color: badgeStyle.text },
+                          ]}>
+                          {report.status}
+                        </Text>
+                      </View>
+                    );
+                  })()}
                 </View>
 
                 <Text style={[styles.ticketNum, isDark && { color: colors.tint }]}>{report.ticket_number}</Text>

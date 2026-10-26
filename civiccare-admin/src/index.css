@@ -251,3 +251,63 @@ body {
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
   }
 }
+
+/* Full-Screen Edge-to-Edge Admin Login (Matching Screen 18) */
+.login-split-page {
+  display: flex;
+  flex-direction: row;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-color: #FFFFFF;
+  overflow: hidden;
+}
+
+.login-left-banner {
+  height: 100vh;
+  aspect-ratio: 941 / 1672;
+  background-color: #071326;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.login-banner-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.login-right-form {
+  flex: 1;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 60px;
+  background-color: #FFFFFF;
+  overflow-y: auto;
+}
+
+@media (max-width: 900px) {
+  .login-split-page {
+    flex-direction: column;
+    height: auto;
+    overflow-y: auto;
+  }
+  .login-left-banner {
+    width: 100%;
+    height: 340px;
+    aspect-ratio: auto;
+  }
+  .login-right-form {
+    height: auto;
+    padding: 30px 20px;
+  }
+}
+

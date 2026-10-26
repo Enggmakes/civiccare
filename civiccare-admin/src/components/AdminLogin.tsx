@@ -82,18 +82,18 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div style={styles.fullScreenPage}>
-      {/* Left Half: Full-bleed civiccare_first_welcome_web.png edge-to-edge */}
-      <div style={styles.leftSideBanner}>
+    <div className="login-split-page">
+      {/* Left Side: Exact aspect ratio matching civiccare_first_welcome_web.png with zero crop */}
+      <div className="login-left-banner">
         <img
           src="/assets/civiccare_first_welcome_web.png"
           alt="CivicCare Municipal Portal"
-          style={styles.bannerImg}
+          className="login-banner-img"
         />
       </div>
 
-      {/* Right Half: Clean White Full-Screen Section for Form */}
-      <div style={styles.rightSideFormSection}>
+      {/* Right Side: Clean White Full-Screen Section for Form */}
+      <div className="login-right-form">
         <div style={styles.formContainer}>
           {/* Header matching Screen 18 */}
           <div style={styles.headerBlock}>
@@ -218,42 +218,6 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 };
 
 const styles: Record<string, React.CSSProperties> = {
-  fullScreenPage: {
-    display: 'flex',
-    flexDirection: 'row',
-    width: '100vw',
-    minHeight: '100vh',
-    margin: 0,
-    padding: 0,
-    backgroundColor: '#FFFFFF',
-    overflow: 'hidden',
-  },
-  leftSideBanner: {
-    width: '45%',
-    minWidth: '380px',
-    maxWidth: '680px',
-    height: '100vh',
-    position: 'relative',
-    backgroundColor: '#0A192F',
-    flexShrink: 0,
-  },
-  bannerImg: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    objectPosition: 'center',
-    display: 'block',
-  },
-  rightSideFormSection: {
-    flex: 1,
-    height: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '40px 60px',
-    backgroundColor: '#FFFFFF',
-    overflowY: 'auto',
-  },
   formContainer: {
     width: '100%',
     maxWidth: '440px',

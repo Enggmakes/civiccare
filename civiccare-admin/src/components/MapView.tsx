@@ -38,6 +38,65 @@ function MapAutoCenter({ reports }: { reports: CivicReport[] }) {
   return null;
 }
 
+// Inner Popup card that cleanly closes popup before triggering details drawer
+function MapPopupCard({
+  report,
+  onSelectReport,
+}: {
+  report: CivicReport;
+  onSelectReport: (r: CivicReport) => void;
+}) {
+  const map = useMap();
+
+  return (
+    <div style={styles.popupCard}>
+      <img
+        src={report.primary_image_url || 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=300&auto=format&fit=crop&q=80'}
+        alt={report.title}
+        style={styles.popupImage}
+      />
+      <div style={styles.popupBody}>
+        <div style={styles.popupTitleRow}>
+          <span style={styles.popupTitle}>{report.title}</span>
+          <span style={styles.popupId}>{report.ticket_number}</span>
+        </div>
+
+        <div style={styles.popupMetaRow}>
+          <span
+            style={{
+              ...styles.popupBadge,
+              backgroundColor:
+                report.severity === 'High' ? '#FEE2E2' : '#EFF6FF',
+              color: report.severity === 'High' ? '#DC2626' : '#2563EB',
+            }}>
+            {report.severity}
+          </span>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+            <img
+              src={getCategoryMeta(report.category_id).icon}
+              alt={report.category_id}
+              style={{ width: '16px', height: '16px', objectFit: 'contain' }}
+            />
+            <span style={styles.popupCategory}>{report.category_id}</span>
+          </div>
+        </div>
+
+        <p style={styles.popupAddress}>{report.formatted_address}</p>
+
+        <button
+          onClick={() => {
+            map.closePopup();
+            onSelectReport(report);
+          }}
+          style={styles.popupBtn}>
+          <span>View Details</span>
+          <ArrowRight size={14} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // 9 Official Issue Categories matching Mobile App with Flaticons & Unique Colors
 export const CATEGORY_META: Record<string, { color: string; icon: string; label: string }> = {
   Pothole: {
@@ -291,49 +350,7 @@ export const MapView: React.FC<MapViewProps> = ({
               position={[report.latitude || 19.1197, report.longitude || 72.8397]}
               icon={createPinIcon(report.category_id, report.status, report.severity)}>
               <Popup className="custom-popup">
-                {/* Popup Card matching Screen 21 */}
-                <div style={styles.popupCard}>
-                  <img
-                    src={report.primary_image_url || 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=300&auto=format&fit=crop&q=80'}
-                    alt={report.title}
-                    style={styles.popupImage}
-                  />
-                  <div style={styles.popupBody}>
-                    <div style={styles.popupTitleRow}>
-                      <span style={styles.popupTitle}>{report.title}</span>
-                      <span style={styles.popupId}>{report.ticket_number}</span>
-                    </div>
-
-                    <div style={styles.popupMetaRow}>
-                      <span
-                        style={{
-                          ...styles.popupBadge,
-                          backgroundColor:
-                            report.severity === 'High' ? '#FEE2E2' : '#EFF6FF',
-                          color: report.severity === 'High' ? '#DC2626' : '#2563EB',
-                        }}>
-                        {report.severity}
-                      </span>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                        <img
-                          src={getCategoryMeta(report.category_id).icon}
-                          alt={report.category_id}
-                          style={{ width: '16px', height: '16px', objectFit: 'contain' }}
-                        />
-                        <span style={styles.popupCategory}>{report.category_id}</span>
-                      </div>
-                    </div>
-
-                    <p style={styles.popupAddress}>{report.formatted_address}</p>
-
-                    <button
-                      onClick={() => onSelectReport(report)}
-                      style={styles.popupBtn}>
-                      <span>View Details</span>
-                      <ArrowRight size={14} />
-                    </button>
-                  </div>
-                </div>
+                <MapPopupCard report={report} onSelectReport={onSelectReport} />
               </Popup>
             </Marker>
           ))}

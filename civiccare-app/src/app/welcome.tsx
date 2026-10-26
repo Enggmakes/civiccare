@@ -4,15 +4,16 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ImageBackground,
+  Image,
   StatusBar,
   Dimensions,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/services/auth';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -30,31 +31,45 @@ export default function WelcomeScreen() {
       <StatusBar barStyle="dark-content" />
 
       {/* Full-Screen Edge-to-Edge City Illustration with Built-in CivicCare Branding */}
-      <ImageBackground
+      <Image
         source={require('@/assets/civiccare/welcome_background.png')}
-        style={styles.backgroundImage}
-        resizeMode="cover">
-        
-        {/* Bottom Call to Action Section */}
-        <View style={[styles.bottomContainer, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
-          {/* Primary "Get Started" Pill Button */}
-          <TouchableOpacity
-            style={styles.getStartedButton}
-            activeOpacity={0.88}
-            onPress={() => router.replace('/onboarding')}>
-            <Text style={styles.getStartedText}>Get Started</Text>
-          </TouchableOpacity>
+        style={StyleSheet.absoluteFill}
+        resizeMode="cover"
+      />
 
-          {/* "Already have an account? Sign In" Row */}
-          <TouchableOpacity
-            style={styles.signInRow}
-            activeOpacity={0.7}
-            onPress={() => router.replace('/auth')}>
-            <Text style={styles.signInPrompt}>Already have an account? </Text>
-            <Text style={styles.signInLink}>Sign In</Text>
-          </TouchableOpacity>
-        </View>
-      </ImageBackground>
+      {/* Soft White Gradient Overlay at the bottom matching reference */}
+      <LinearGradient
+        colors={[
+          'rgba(255, 255, 255, 0)',
+          'rgba(255, 255, 255, 0.4)',
+          'rgba(255, 255, 255, 0.78)',
+          'rgba(255, 255, 255, 0.95)',
+          '#FFFFFF',
+        ]}
+        locations={[0, 0.25, 0.55, 0.8, 1]}
+        style={styles.gradientOverlay}
+        pointerEvents="none"
+      />
+
+      {/* Bottom Call to Action Section */}
+      <View style={[styles.bottomContainer, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
+        {/* Primary "Get Started" Pill Button */}
+        <TouchableOpacity
+          style={styles.getStartedButton}
+          activeOpacity={0.88}
+          onPress={() => router.replace('/onboarding')}>
+          <Text style={styles.getStartedText}>Get Started</Text>
+        </TouchableOpacity>
+
+        {/* "Already have an account? Sign In" Row */}
+        <TouchableOpacity
+          style={styles.signInRow}
+          activeOpacity={0.7}
+          onPress={() => router.replace('/auth')}>
+          <Text style={styles.signInPrompt}>Already have an account? </Text>
+          <Text style={styles.signInLink}>Sign In</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -63,12 +78,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#EBF4FE',
-  },
-  backgroundImage: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
     justifyContent: 'flex-end',
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: Math.max(height * 0.38, 280),
   },
   bottomContainer: {
     width: '100%',

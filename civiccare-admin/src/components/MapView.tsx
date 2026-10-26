@@ -461,12 +461,12 @@ const styles: Record<string, React.CSSProperties> = {
   popupTitle: {
     fontSize: '13px',
     fontWeight: '700',
-    color: '#0F172A',
+    color: 'var(--text-main)',
     lineHeight: '1.3',
   },
   popupId: {
     fontSize: '11px',
-    color: '#64748B',
+    color: 'var(--text-muted)',
     fontFamily: 'monospace',
     fontWeight: '600',
   },
@@ -485,11 +485,11 @@ const styles: Record<string, React.CSSProperties> = {
   popupCategory: {
     fontSize: '11px',
     fontWeight: '600',
-    color: '#64748B',
+    color: 'var(--text-muted)',
   },
   popupAddress: {
     fontSize: '11px',
-    color: '#64748B',
+    color: 'var(--text-muted)',
     lineHeight: '1.3',
   },
   popupBtn: {

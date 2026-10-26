@@ -41,7 +41,15 @@ export function App() {
   const [reports, setReports] = useState<CivicReport[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedReport, setSelectedReport] = useState<CivicReport | null>(null);
-  const [isDark, setIsDark] = useState<boolean>(false);
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('civiccare_admin_theme');
+      if (saved) return saved === 'dark';
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch {
+      return false;
+    }
+  });
 
   // Load initial reports from Supabase & keep live with WebSocket + 2.5s background sync
   useEffect(() => {
@@ -152,13 +160,19 @@ export function App() {
   useEffect(() => {
     if (isDark) {
       document.documentElement.setAttribute('data-theme', 'dark');
+      try {
+        localStorage.setItem('civiccare_admin_theme', 'dark');
+      } catch {}
     } else {
       document.documentElement.removeAttribute('data-theme');
+      try {
+        localStorage.setItem('civiccare_admin_theme', 'light');
+      } catch {}
     }
   }, [isDark]);
 
   const handleToggleTheme = () => {
-    setIsDark(!isDark);
+    setIsDark((prev) => !prev);
   };
 
   const handleTabChange = (tab: string) => {

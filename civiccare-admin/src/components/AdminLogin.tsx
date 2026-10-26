@@ -176,13 +176,13 @@ const styles: Record<string, React.CSSProperties> = {
   welcomeTitle: {
     fontSize: '32px',
     fontWeight: '800',
-    color: '#0F172A',
+    color: 'var(--text-main, #0F172A)',
     letterSpacing: '-0.6px',
     marginBottom: '8px',
   },
   welcomeSubtitle: {
     fontSize: '15px',
-    color: '#64748B',
+    color: 'var(--text-muted, #64748B)',
     fontWeight: '500',
   },
   errorBox: {
@@ -208,7 +208,7 @@ const styles: Record<string, React.CSSProperties> = {
   label: {
     fontSize: '13px',
     fontWeight: '600',
-    color: '#334155',
+    color: 'var(--text-main, #334155)',
   },
   inputWrapper: {
     position: 'relative',
@@ -224,10 +224,10 @@ const styles: Record<string, React.CSSProperties> = {
     width: '100%',
     padding: '13px 14px 13px 44px',
     borderRadius: '12px',
-    border: '1px solid #E2E8F0',
-    backgroundColor: '#FFFFFF',
+    border: '1px solid var(--border-light, #E2E8F0)',
+    backgroundColor: 'var(--bg-surface, #FFFFFF)',
     fontSize: '14px',
-    color: '#0F172A',
+    color: 'var(--text-main, #0F172A)',
     outline: 'none',
     boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
     transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
@@ -264,7 +264,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
   },
   checkboxText: {
-    color: '#475569',
+    color: 'var(--text-muted, #475569)',
     fontWeight: '500',
   },
   forgotBtn: {

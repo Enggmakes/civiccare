@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -24,16 +25,22 @@ import {
 
 export default function MyReportsScreen() {
   const router = useRouter();
-  const { getUserReports } = useReports();
+  const { getUserReports, refreshReports, isRefreshing } = useReports();
   const { user } = useUser();
   const { isSignedIn } = useAuth();
   const { isDark, colors } = useAppTheme();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<'All' | 'Active' | 'Resolved'>('All');
 
+  // Trigger data sync whenever user logs in, logs out, or switches accounts
+  useEffect(() => {
+    refreshReports();
+  }, [isSignedIn, user?.id, user?.fullName]);
+
   const isGuest = !isSignedIn || !user || user.id === 'guest_citizen';
   const currentUserId = isGuest ? 'guest_citizen' : user.id;
-  const myReports = getUserReports(currentUserId);
+  const userContext = user ? { fullName: user.fullName, email: user.primaryEmailAddress?.emailAddress } : null;
+  const myReports = getUserReports(currentUserId, userContext);
 
   const isResolvedOrClosed = (status: string) => status === 'Resolved' || status === 'Closed';
 
@@ -98,7 +105,15 @@ export default function MyReportsScreen() {
       <ScrollView
         style={[styles.scrollView, isDark && { backgroundColor: colors.background }]}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 120 }]}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={refreshReports}
+            tintColor={CivicCareColors.brandPrimary}
+            colors={[CivicCareColors.brandPrimary]}
+          />
+        }>
         {filtered.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyTitle, isDark && { color: colors.text }]}>No reports found</Text>

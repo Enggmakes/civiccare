@@ -97,7 +97,8 @@ export default function ProfileScreen() {
 
   const isGuest = !isSignedIn || !user || user.id === 'guest_citizen';
   const currentUserId = isGuest ? 'guest_citizen' : user.id;
-  const myReports = getUserReports(currentUserId);
+  const userContext = user ? { fullName: user.fullName, email: user.primaryEmailAddress?.emailAddress } : null;
+  const myReports = getUserReports(currentUserId, userContext);
 
   // Dynamic Metrics isolated specifically for this logged-in citizen
   const totalSubmitted = myReports.length;

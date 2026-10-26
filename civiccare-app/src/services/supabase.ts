@@ -70,6 +70,8 @@ export interface CivicReportItem {
   department_name: string;
   department_id?: string;
   user_id?: string;
+  author_name?: string;
+  author_email?: string;
   time_ago: string;
   distance_km: string;
   subscriber_count?: number;

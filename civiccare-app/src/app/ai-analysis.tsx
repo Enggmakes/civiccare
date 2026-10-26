@@ -182,9 +182,11 @@ export default function AIAnalysisScreen() {
         }
       }
 
-      // Determine author ID for user report isolation
+      // Determine author ID and metadata for robust user report isolation
       const isGuest = !isSignedIn || !user || user.id === 'guest_citizen';
       const authorUserId = isGuest ? 'guest_citizen' : user.id;
+      const authorName = isGuest ? 'Guest Citizen' : (user?.fullName || user?.firstName || 'Citizen');
+      const authorEmail = isGuest ? '' : (user?.primaryEmailAddress?.emailAddress || '');
 
       // Commit report to store and live Supabase
       const created = await addReport({
@@ -200,7 +202,9 @@ export default function AIAnalysisScreen() {
         department_name: aiDept,
         department_id: aiDeptId,
         user_id: authorUserId,
-      }, authorUserId);
+        author_name: authorName,
+        author_email: authorEmail,
+      }, authorUserId, authorName, authorEmail);
 
       // Navigate to Screen 6: Report Submitted
       setTimeout(() => {

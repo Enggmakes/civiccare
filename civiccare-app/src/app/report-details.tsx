@@ -155,7 +155,7 @@ export default function ReportDetailsScreen() {
             const isActive = step.is_active;
 
             return (
-              <View key={step.step} style={styles.timelineRow}>
+              <View key={`timeline_step_${step.step}_${idx}`} style={styles.timelineRow}>
                 {/* Left Indicator & Connecting Line */}
                 <View style={styles.indicatorColumn}>
                   <View

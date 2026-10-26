@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   StatusBar,
   ActivityIndicator,
   Alert,
+  Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -55,6 +56,53 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
   const [isLocatingCity, setIsLocatingCity] = useState(false);
+
+  // Smooth theme animation for banner and text transitions
+  const themeAnim = useRef(new Animated.Value(isDark ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(themeAnim, {
+      toValue: isDark ? 1 : 0,
+      duration: 350,
+      useNativeDriver: false,
+    }).start();
+  }, [isDark, themeAnim]);
+
+  // Smooth interpolations for day/night hero banner crossfade and text color transition
+  const dayBannerOpacity = themeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0],
+  });
+
+  const nightBannerOpacity = themeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  const bannerTitleColor = themeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [CivicCareColors.textMain, '#FFFFFF'],
+  });
+
+  const bannerSubtitleColor = themeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [CivicCareColors.textSecondary, 'rgba(255, 255, 255, 0.90)'],
+  });
+
+  const bannerOverlayBg = themeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['rgba(255, 255, 255, 0.45)', 'rgba(15, 23, 42, 0.42)'],
+  });
+
+  const bannerBorderColor = themeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#DBEAFE', '#334155'],
+  });
+
+  const bannerBgColor = themeAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['#EBF4FF', '#0F172A'],
+  });
 
   // Dynamic city name resolved directly from user profile (e.g. Pune for Rit), user selection, or GPS
   const displayCity = selectedCity || getShortCityName(user?.ward) || 'Pune';
@@ -172,18 +220,34 @@ export default function HomeScreen() {
           />
         </View>
 
-        {/* Official Civic Hero Banner (Asset 07) */}
-        <View style={styles.heroBannerCard}>
-          <Image
+        {/* Official Civic Hero Banner with Smooth Day/Night Cross-Fade */}
+        <Animated.View
+          style={[
+            styles.heroBannerCard,
+            {
+              borderColor: bannerBorderColor,
+              backgroundColor: bannerBgColor,
+            },
+          ]}>
+          <Animated.Image
             source={require('@/assets/civiccare/07_home_screen_hero_banner.png')}
-            style={styles.heroBannerImage}
+            style={[styles.heroBannerImage, { opacity: dayBannerOpacity }]}
             resizeMode="cover"
           />
-          <View style={styles.heroBannerOverlay}>
-            <Text style={styles.bannerTitle}>Together for a{"\n"}Cleaner, Safer City</Text>
-            <Text style={styles.bannerSubtitle}>Report civic issues and{"\n"}help make a difference.</Text>
-          </View>
-        </View>
+          <Animated.Image
+            source={require('@/assets/civiccare/night_home_screen_banner.png')}
+            style={[styles.heroBannerImage, { opacity: nightBannerOpacity }]}
+            resizeMode="cover"
+          />
+          <Animated.View style={[styles.heroBannerOverlay, { backgroundColor: bannerOverlayBg }]}>
+            <Animated.Text style={[styles.bannerTitle, { color: bannerTitleColor }]}>
+              Together for a{"\n"}Cleaner, Safer City
+            </Animated.Text>
+            <Animated.Text style={[styles.bannerSubtitle, { color: bannerSubtitleColor }]}>
+              Report civic issues and{"\n"}help make a difference.
+            </Animated.Text>
+          </Animated.View>
+        </Animated.View>
 
         {/* Big Prominent Action Button: Report an Issue */}
         <TouchableOpacity
@@ -429,20 +493,23 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: Spacing.four,
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.45)',
   },
   bannerTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: CivicCareColors.textMain,
     lineHeight: 23,
     marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.35)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   bannerSubtitle: {
     fontSize: 12,
-    color: CivicCareColors.textSecondary,
     lineHeight: 16,
     fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.25)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   reportActionButton: {
     backgroundColor: CivicCareColors.brandPrimary,

@@ -18,6 +18,13 @@ CIVIC CARE/
 │   │   └── services/       # Supabase client, Clerk auth, and report store
 │   └── assets/             # Brand logos, Flaticon 3D civic pins, and SF icons
 │
+├── civiccare-admin/        # Municipal Admin & Department Web Portal (React 19, TypeScript, Vite)
+│   ├── src/
+│   │   ├── components/     # AdminLogin, DashboardOverview, ReportsManagement, MapView, AnalyticsView, UpdateReportDrawer
+│   │   ├── services/       # Live Supabase Realtime synchronization & data triage
+│   │   └── types.ts        # Shared grievance, department, and SLA interfaces
+│   └── public/             # Municipal headquarters banners & category icons
+│
 ├── ai-backend/             # Real-time AI Defect Detection Microservice (FastAPI, YOLOv8, OpenCV)
 │   ├── main.py             # FastAPI API with Anti-False-Positive Filter & municipal severity
 │   ├── yolov8n.pt          # YOLOv8 neural network defect weights
@@ -74,14 +81,22 @@ npm install
 npx expo start
 ```
 
-### 3. Set Up the AI Microservice
+### 3. Set Up the Municipal Admin Portal
+```bash
+cd civiccare-admin
+npm install
+npm run dev
+# Serving on http://localhost:3000 / http://localhost:3001
+```
+
+### 4. Set Up the AI Microservice
 ```bash
 cd ai-backend
 pip install -r requirements.txt
 python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 4. Database Setup
+### 5. Database Setup
 Execute `supabase_setup.sql` in the **SQL Editor** of your Supabase project dashboard to create tables, storage buckets, RLS policies, and seed municipal departments.
 
 ---

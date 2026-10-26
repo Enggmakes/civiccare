@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, ShieldCheck, ArrowRight, Building2, Sparkles } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Building2, Sparkles, ShieldCheck } from 'lucide-react';
 import type { AdminUser } from '../types';
 
 interface AdminLoginProps {
@@ -43,7 +43,7 @@ const PRESET_USERS: AdminUser[] = [
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('admin@municipal.gov.in');
-  const [password, setPassword] = useState('Admin@2026#Civic');
+  const [password, setPassword] = useState('Password');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -54,17 +54,16 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
     setError('');
 
     if (!email || !password) {
-      setError('Please provide your department email and password.');
+      setError('Please enter your email and password.');
       return;
     }
 
     setLoading(true);
     setTimeout(() => {
-      // Find matching preset user or synthesize one
       const matchedUser = PRESET_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase());
       const userToLogin: AdminUser = matchedUser || {
-        id: 'admin-custom',
-        name: email.split('@')[0].toUpperCase() + ' (Officer)',
+        id: 'admin-officer',
+        name: email.split('@')[0].toUpperCase(),
         email: email,
         role: 'dept_admin',
         department: 'Municipal Operations Unit',
@@ -73,65 +72,43 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 
       setLoading(false);
       onLoginSuccess(userToLogin);
-    }, 600);
+    }, 400);
   };
 
   const handleSelectPreset = (preset: AdminUser) => {
     setEmail(preset.email);
-    setPassword('Admin@2026#Civic');
+    setPassword('Password');
     setError('');
   };
 
   return (
-    <div style={styles.pageBackground}>
-      {/* Decorative ambient lights */}
-      <div style={styles.ambientGlowTop} />
-      <div style={styles.ambientGlowBottom} />
+    <div style={styles.fullScreenPage}>
+      {/* Left Half: Full-bleed civiccare_first_welcome_web.png edge-to-edge */}
+      <div style={styles.leftSideBanner}>
+        <img
+          src="/assets/civiccare_first_welcome_web.png"
+          alt="CivicCare Municipal Portal"
+          style={styles.bannerImg}
+        />
+      </div>
 
-      {/* Main Dual-Panel Login Container matching Screen 18 */}
-      <div style={styles.loginModal}>
-        {/* Left Side: Brand Visual Card */}
-        <div style={styles.leftBanner}>
-          {/* Top Logo & Heading */}
-          <div style={styles.leftTopBrand}>
-            <div style={styles.logoRow}>
-              <img
-                src="/assets/logo.png"
-                alt="CivicCare Logo"
-                style={styles.logoMark}
-              />
-            </div>
-            <h1 style={styles.brandTitle}>CivicCare</h1>
-            <p style={styles.brandSubtitle}>Municipal Portal</p>
-            <p style={styles.brandTagline}>Manage. Resolve. Build a Better City.</p>
-          </div>
-
-          {/* Bottom Illustration: Building & Trees */}
-          <div style={styles.illustrationWrapper}>
-            <img
-              src="/assets/admin_welcome_banner.png"
-              alt="Municipal Glass Building Headquarters"
-              style={styles.bannerImage}
-            />
-            <div style={styles.illustrationOverlay} />
-          </div>
-        </div>
-
-        {/* Right Side: Sign-In Form matching Screen 18 */}
-        <div style={styles.rightFormPanel}>
-          <div style={styles.formHeader}>
-            <h2 style={styles.welcomeHeading}>Welcome Back</h2>
+      {/* Right Half: Clean White Full-Screen Section for Form */}
+      <div style={styles.rightSideFormSection}>
+        <div style={styles.formContainer}>
+          {/* Header matching Screen 18 */}
+          <div style={styles.headerBlock}>
+            <h1 style={styles.welcomeTitle}>Welcome Back</h1>
             <p style={styles.welcomeSubtitle}>Sign in to your department account</p>
           </div>
 
-          {error && <div style={styles.errorAlert}>{error}</div>}
+          {error && <div style={styles.errorBox}>{error}</div>}
 
           <form onSubmit={handleSubmit} style={styles.form}>
             {/* Email Field */}
             <div style={styles.inputGroup}>
-              <label style={styles.inputLabel}>Email</label>
+              <label style={styles.label}>Email</label>
               <div style={styles.inputWrapper}>
-                <Mail size={18} style={styles.inputIcon} />
+                <Mail size={18} color="#94A3B8" style={styles.inputIcon} />
                 <input
                   type="email"
                   value={email}
@@ -145,9 +122,9 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 
             {/* Password Field */}
             <div style={styles.inputGroup}>
-              <label style={styles.inputLabel}>Password</label>
+              <label style={styles.label}>Password</label>
               <div style={styles.inputWrapper}>
-                <Lock size={18} style={styles.inputIcon} />
+                <Lock size={18} color="#94A3B8" style={styles.inputIcon} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
@@ -159,14 +136,14 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  style={styles.eyeButton}
+                  style={styles.eyeBtn}
                   tabIndex={-1}>
                   {showPassword ? <EyeOff size={18} color="#94A3B8" /> : <Eye size={18} color="#94A3B8" />}
                 </button>
               </div>
             </div>
 
-            {/* Remember Me & Forgot Password Row */}
+            {/* Options Row: Remember Me & Forgot Password */}
             <div style={styles.optionsRow}>
               <label style={styles.checkboxLabel}>
                 <input
@@ -180,22 +157,22 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 
               <button
                 type="button"
-                onClick={() => alert('Password reset instructions sent to registered government email.')}
-                style={styles.forgotLink}>
+                onClick={() => alert('Password reset link sent to registered municipal email.')}
+                style={styles.forgotBtn}>
                 Forgot password?
               </button>
             </div>
 
-            {/* Primary Sign In Button */}
+            {/* Primary Sign In Button matching Screen 18 */}
             <button
               type="submit"
               disabled={loading}
               style={{
-                ...styles.signInButton,
-                opacity: loading ? 0.75 : 1,
+                ...styles.signInBtn,
+                opacity: loading ? 0.8 : 1,
               }}>
               {loading ? (
-                <span>Authenticating Officer...</span>
+                <span>Signing In...</span>
               ) : (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                   Sign In <ArrowRight size={18} />
@@ -204,13 +181,13 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
             </button>
           </form>
 
-          {/* Quick Demo Department Login Shortcuts */}
+          {/* Quick Demo Department Shortcuts */}
           <div style={styles.demoSection}>
-            <div style={styles.demoHeader}>
+            <div style={styles.demoTitle}>
               <Sparkles size={14} color="#0066FF" />
               <span>Quick Demo Department Access:</span>
             </div>
-            <div style={styles.presetGrid}>
+            <div style={styles.presetList}>
               {PRESET_USERS.map((user) => (
                 <button
                   key={user.id}
@@ -218,8 +195,9 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
                   onClick={() => handleSelectPreset(user)}
                   style={{
                     ...styles.presetPill,
-                    borderColor: email === user.email ? '#0066FF' : '#E2E8F0',
                     backgroundColor: email === user.email ? '#EFF6FF' : '#F8FAFC',
+                    borderColor: email === user.email ? '#0066FF' : '#E2E8F0',
+                    color: email === user.email ? '#0066FF' : '#334155',
                   }}>
                   <Building2 size={13} color={email === user.email ? '#0066FF' : '#64748B'} />
                   <span>{user.department.replace(' Dept.', '').replace(' Department', '')}</span>
@@ -228,10 +206,10 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
             </div>
           </div>
 
-          {/* Security Badge */}
-          <div style={styles.securityFooter}>
+          {/* Security note */}
+          <div style={styles.securityNote}>
             <ShieldCheck size={14} color="#10B981" />
-            <span>GovNet 256-bit Encrypted Session · ISO/IEC 27001 Certified Municipal Gateway</span>
+            <span>GovNet 256-bit Encrypted Session · ISO/IEC 27001 Certified Municipal Portal</span>
           </div>
         </div>
       </div>
@@ -240,149 +218,64 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 };
 
 const styles: Record<string, React.CSSProperties> = {
-  pageBackground: {
-    minHeight: '100vh',
-    width: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#07101E',
-    backgroundImage: 'radial-gradient(circle at 50% 15%, #0F284E 0%, #07101E 75%)',
-    position: 'relative',
-    overflow: 'hidden',
-    padding: '24px',
-  },
-  ambientGlowTop: {
-    position: 'absolute',
-    top: '-150px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    width: '600px',
-    height: '400px',
-    background: 'radial-gradient(circle, rgba(0, 102, 255, 0.25) 0%, rgba(0, 102, 255, 0) 70%)',
-    pointerEvents: 'none',
-  },
-  ambientGlowBottom: {
-    position: 'absolute',
-    bottom: '-200px',
-    right: '10%',
-    width: '500px',
-    height: '500px',
-    background: 'radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0) 70%)',
-    pointerEvents: 'none',
-  },
-  loginModal: {
+  fullScreenPage: {
     display: 'flex',
     flexDirection: 'row',
-    width: '100%',
-    maxWidth: '1040px',
-    minHeight: '620px',
+    width: '100vw',
+    minHeight: '100vh',
+    margin: 0,
+    padding: 0,
     backgroundColor: '#FFFFFF',
-    borderRadius: '24px',
     overflow: 'hidden',
-    boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08)',
+  },
+  leftSideBanner: {
+    width: '45%',
+    minWidth: '380px',
+    maxWidth: '680px',
+    height: '100vh',
     position: 'relative',
-    zIndex: 10,
+    backgroundColor: '#0A192F',
+    flexShrink: 0,
   },
-  leftBanner: {
-    flex: '1 1 48%',
-    backgroundColor: '#08172D',
-    background: 'linear-gradient(180deg, #091931 0%, #061122 100%)',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    position: 'relative',
-    overflow: 'hidden',
-    padding: '44px 36px 0 36px',
-    borderRight: '1px solid rgba(255, 255, 255, 0.08)',
-  },
-  leftTopBrand: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    textAlign: 'center',
-    zIndex: 5,
-  },
-  logoRow: {
-    marginBottom: '10px',
-  },
-  logoMark: {
-    width: '68px',
-    height: '48px',
-    objectFit: 'contain',
-    filter: 'drop-shadow(0 4px 12px rgba(0, 102, 255, 0.4))',
-  },
-  brandTitle: {
-    fontSize: '32px',
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: '-0.5px',
-    marginBottom: '4px',
-  },
-  brandSubtitle: {
-    fontSize: '17px',
-    fontWeight: '600',
-    color: '#93C5FD',
-    marginBottom: '12px',
-    letterSpacing: '0.2px',
-  },
-  brandTagline: {
-    fontSize: '15px',
-    color: '#E2E8F0',
-    fontWeight: '500',
-    maxWidth: '280px',
-    lineHeight: '1.4',
-  },
-  illustrationWrapper: {
-    width: '100%',
-    height: '320px',
-    position: 'relative',
-    marginTop: 'auto',
-    display: 'flex',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-  },
-  bannerImage: {
+  bannerImg: {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
-    objectPosition: 'bottom center',
-    borderTopLeftRadius: '16px',
-    borderTopRightRadius: '16px',
+    objectPosition: 'center',
+    display: 'block',
   },
-  illustrationOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '70px',
-    background: 'linear-gradient(180deg, #091931 0%, rgba(9, 25, 49, 0) 100%)',
-    pointerEvents: 'none',
-  },
-  rightFormPanel: {
-    flex: '1 1 52%',
+  rightSideFormSection: {
+    flex: 1,
+    height: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '40px 60px',
     backgroundColor: '#FFFFFF',
-    padding: '48px 44px',
+    overflowY: 'auto',
+  },
+  formContainer: {
+    width: '100%',
+    maxWidth: '440px',
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'center',
   },
-  formHeader: {
-    marginBottom: '28px',
+  headerBlock: {
+    marginBottom: '32px',
   },
-  welcomeHeading: {
-    fontSize: '28px',
+  welcomeTitle: {
+    fontSize: '32px',
     fontWeight: '800',
     color: '#0F172A',
-    letterSpacing: '-0.5px',
-    marginBottom: '6px',
+    letterSpacing: '-0.6px',
+    marginBottom: '8px',
   },
   welcomeSubtitle: {
-    fontSize: '14px',
+    fontSize: '15px',
     color: '#64748B',
     fontWeight: '500',
   },
-  errorAlert: {
+  errorBox: {
     backgroundColor: '#FEE2E2',
     color: '#DC2626',
     border: '1px solid #FECACA',
@@ -390,19 +283,19 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '10px 14px',
     fontSize: '13px',
     fontWeight: '600',
-    marginBottom: '16px',
+    marginBottom: '18px',
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '18px',
+    gap: '20px',
   },
   inputGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '6px',
+    gap: '7px',
   },
-  inputLabel: {
+  label: {
     fontSize: '13px',
     fontWeight: '600',
     color: '#334155',
@@ -415,21 +308,21 @@ const styles: Record<string, React.CSSProperties> = {
   inputIcon: {
     position: 'absolute',
     left: '14px',
-    color: '#94A3B8',
     pointerEvents: 'none',
   },
   textInput: {
     width: '100%',
-    padding: '12px 14px 12px 42px',
+    padding: '13px 14px 13px 44px',
     borderRadius: '12px',
     border: '1px solid #E2E8F0',
     backgroundColor: '#FFFFFF',
     fontSize: '14px',
     color: '#0F172A',
     outline: 'none',
-    transition: 'all 0.15s ease',
+    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
+    transition: 'border-color 0.15s ease, box-shadow 0.15s ease',
   },
-  eyeButton: {
+  eyeBtn: {
     position: 'absolute',
     right: '12px',
     background: 'none',
@@ -464,7 +357,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#475569',
     fontWeight: '500',
   },
-  forgotLink: {
+  forgotBtn: {
     background: 'none',
     border: 'none',
     color: '#0066FF',
@@ -473,28 +366,28 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     padding: 0,
   },
-  signInButton: {
+  signInBtn: {
     backgroundColor: '#0066FF',
     color: '#FFFFFF',
-    padding: '13px',
+    padding: '14px',
     borderRadius: '12px',
     fontSize: '15px',
     fontWeight: '700',
     border: 'none',
     cursor: 'pointer',
-    boxShadow: '0 4px 14px rgba(0, 102, 255, 0.35)',
+    boxShadow: '0 6px 16px rgba(0, 102, 255, 0.32)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: '6px',
-    transition: 'all 0.2s ease',
+    transition: 'all 0.15s ease',
   },
   demoSection: {
-    marginTop: '28px',
-    paddingTop: '20px',
+    marginTop: '32px',
+    paddingTop: '22px',
     borderTop: '1px solid #F1F5F9',
   },
-  demoHeader: {
+  demoTitle: {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
@@ -503,7 +396,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#475569',
     marginBottom: '10px',
   },
-  presetGrid: {
+  presetList: {
     display: 'flex',
     flexWrap: 'wrap',
     gap: '8px',
@@ -512,17 +405,16 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '6px',
-    padding: '6px 10px',
+    padding: '7px 11px',
     borderRadius: '8px',
     border: '1px solid #E2E8F0',
     fontSize: '11px',
     fontWeight: '600',
-    color: '#334155',
     cursor: 'pointer',
     transition: 'all 0.15s ease',
   },
-  securityFooter: {
-    marginTop: '24px',
+  securityNote: {
+    marginTop: '28px',
     display: 'flex',
     alignItems: 'center',
     gap: '6px',

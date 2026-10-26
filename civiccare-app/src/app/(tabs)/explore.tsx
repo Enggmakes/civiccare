@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -23,6 +23,7 @@ import {
   Layers,
   ChevronRight,
   ShieldAlert,
+  AlertCircle,
 } from 'lucide-react-native';
 import { WebView } from 'react-native-webview';
 
@@ -37,26 +38,61 @@ export default function NearbyMapScreen() {
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
 
-  // Active selected report (defaults to the first report)
-  const selectedReport = useMemo(() => {
-    if (selectedReportId) {
-      const found = reports.find(r => r.id === selectedReportId);
-      if (found) return found;
-    }
-    return reports[0] || null;
-  }, [selectedReportId, reports]);
-
-  // Filter reports according to selected category
+  // Filter reports strictly according to selected category
   const filteredReports = useMemo(() => {
     if (categoryFilter === 'All') return reports;
-    return reports.filter(r => r.category === categoryFilter);
+    return reports.filter(r => (r.category || '').toLowerCase() === categoryFilter.toLowerCase());
   }, [reports, categoryFilter]);
 
-  // Center map on the selected report's coordinates or default to Palghar/Mumbai
-  const centerLat = selectedReport?.latitude || 19.6967;
-  const centerLng = selectedReport?.longitude || 72.7699;
+  // Active selected report: MUST come from filteredReports
+  const selectedReport = useMemo(() => {
+    if (selectedReportId) {
+      const foundInFiltered = filteredReports.find(r => r.id === selectedReportId);
+      if (foundInFiltered) return foundInFiltered;
+    }
+    return filteredReports[0] || null;
+  }, [selectedReportId, filteredReports]);
 
-  // Generate markers JSON for the Leaflet map with Flaticon-style category details
+  // Center map on the active selected report's coordinates
+  const centerLat = selectedReport?.latitude || 19.6970;
+  const centerLng = selectedReport?.longitude || 72.7588;
+
+  // Listen to web postMessage when running in browser or Expo Web
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const handleWebMessage = (event: MessageEvent) => {
+        try {
+          const msg = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+          if (msg?.type === 'SELECT_REPORT' && msg.id) {
+            setSelectedReportId(msg.id);
+          }
+        } catch {}
+      };
+      window.addEventListener('message', handleWebMessage);
+      return () => window.removeEventListener('message', handleWebMessage);
+    }
+  }, []);
+
+  const handleCategoryPress = (cat: string) => {
+    setCategoryFilter(cat);
+    const newFiltered = cat === 'All'
+      ? reports
+      : reports.filter(r => (r.category || '').toLowerCase() === cat.toLowerCase());
+
+    if (newFiltered.length > 0) {
+      const firstItem = newFiltered[0];
+      setSelectedReportId(firstItem.id);
+      if (webViewRef.current && firstItem.latitude && firstItem.longitude) {
+        webViewRef.current.injectJavaScript(
+          `if (window.panToCoordinates) { window.panToCoordinates(${firstItem.latitude}, ${firstItem.longitude}); } true;`
+        );
+      }
+    } else {
+      setSelectedReportId(null);
+    }
+  };
+
+  // Generate markers JSON for Leaflet with colored category pins
   const markersJson = useMemo(() => {
     const data = filteredReports.map(rep => {
       const isSelected = rep.id === selectedReport?.id;
@@ -66,22 +102,22 @@ export default function NearbyMapScreen() {
 
       if (cat.includes('garbage')) {
         catType = 'garbage';
-        gradient = 'linear-gradient(135deg, #10B981, #047857)'; // Emerald green for garbage
+        gradient = 'linear-gradient(135deg, #10B981, #047857)'; // Emerald green
       } else if (cat.includes('pothole') || cat.includes('road')) {
         catType = 'pothole';
-        gradient = 'linear-gradient(135deg, #EF4444, #B91C1C)'; // Crimson red for pothole/road
+        gradient = 'linear-gradient(135deg, #EF4444, #B91C1C)'; // Crimson red
       } else if (cat.includes('streetlight') || cat.includes('light')) {
         catType = 'streetlight';
-        gradient = 'linear-gradient(135deg, #F59E0B, #D97706)'; // Amber gold for lighting
+        gradient = 'linear-gradient(135deg, #F59E0B, #D97706)'; // Amber gold
       } else if (cat.includes('water')) {
         catType = 'water';
-        gradient = 'linear-gradient(135deg, #0EA5E9, #0284C7)'; // Ocean blue for water
+        gradient = 'linear-gradient(135deg, #0EA5E9, #0284C7)'; // Ocean blue
       }
 
       return {
         id: rep.id,
-        lat: rep.latitude || 19.6967,
-        lng: rep.longitude || 72.7699,
+        lat: rep.latitude || 19.6970,
+        lng: rep.longitude || 72.7588,
         title: rep.title,
         category: rep.category,
         catType,
@@ -91,13 +127,13 @@ export default function NearbyMapScreen() {
       };
     });
     return JSON.stringify(data);
-  }, [filteredReports, selectedReport]);
+  }, [filteredReports, selectedReport?.id]);
 
   // Handle messages received from the interactive Leaflet map
   const handleMapMessage = (event: any) => {
     try {
       const msg = JSON.parse(event.nativeEvent.data);
-      if (msg.type === 'SELECT_REPORT') {
+      if (msg.type === 'SELECT_REPORT' && msg.id) {
         setSelectedReportId(msg.id);
       }
     } catch (e) {
@@ -116,7 +152,7 @@ export default function NearbyMapScreen() {
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
-    * { -webkit-tap-highlight-color: transparent; }
+    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
     body, html, #map { margin: 0; padding: 0; width: 100%; height: 100%; background: ${isDark ? '#121212' : '#F8FAFC'}; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
     ${isDark ? `
     .leaflet-tile-pane {
@@ -129,29 +165,29 @@ export default function NearbyMapScreen() {
     }
     .pin-container {
       position: relative;
-      width: 28px;
-      height: 36px;
+      width: 32px;
+      height: 40px;
       display: flex;
       flex-direction: column;
       align-items: center;
       cursor: pointer;
     }
     .pin-head {
-      width: 26px;
-      height: 26px;
+      width: 30px;
+      height: 30px;
       border-radius: 50% 50% 50% 0;
       transform: rotate(-45deg);
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 2px solid #FFFFFF;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.30);
-      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border: 2.5px solid #FFFFFF;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
       position: relative;
     }
     .pin-head.selected {
-      transform: rotate(-45deg) scale(1.15);
-      box-shadow: 0 5px 14px rgba(0,0,0,0.40), 0 0 0 3px rgba(37, 99, 235, 0.5);
+      transform: rotate(-45deg) scale(1.22);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.45), 0 0 0 4px rgba(59, 130, 246, 0.65);
       border-color: #FFFFFF;
       z-index: 999;
     }
@@ -161,18 +197,18 @@ export default function NearbyMapScreen() {
       align-items: center;
       justify-content: center;
       color: #FFFFFF;
-      filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25));
+      filter: drop-shadow(0 1px 1.5px rgba(0,0,0,0.3));
     }
     .pin-shadow {
       position: absolute;
       bottom: 0px;
       left: 50%;
       transform: translateX(-50%);
-      width: 10px;
-      height: 3px;
-      background: rgba(0,0,0,0.25);
+      width: 12px;
+      height: 4px;
+      background: rgba(0,0,0,0.28);
       border-radius: 50%;
-      filter: blur(1px);
+      filter: blur(1.5px);
     }
   </style>
 </head>
@@ -182,8 +218,9 @@ export default function NearbyMapScreen() {
     var map = L.map('map', {
       zoomControl: false,
       attributionControl: false,
+      tap: false,
       maxZoom: 20
-    }).setView([${centerLat}, ${centerLng}], 14);
+    }).setView([${centerLat}, ${centerLng}], 15);
 
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 20,
@@ -195,28 +232,23 @@ export default function NearbyMapScreen() {
 
     function getCategorySvg(type) {
       if (type === 'garbage') {
-        // Flaticon Trash Can Icon
-        return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>';
+        return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>';
       }
       if (type === 'pothole') {
-        // Flaticon Hazard Caution Icon
-        return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+        return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
       }
       if (type === 'streetlight') {
-        // Flaticon Streetlight / Lightbulb Icon
-        return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v3M12 19v3M5 5l2 2M17 17l2 2M2 12h3M19 12h3M5 19l2-2M17 7l2-2M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/></svg>';
+        return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v3M12 19v3M5 5l2 2M17 17l2 2M2 12h3M19 12h3M5 19l2-2M17 7l2-2M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10z"/></svg>';
       }
       if (type === 'water') {
-        // Flaticon Water Droplet Icon
-        return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>';
+        return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>';
       }
-      // Default Flaticon Shield Icon
-      return '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+      return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
     }
 
     markersData.forEach(function(m) {
       var selectedClass = m.isSelected ? 'selected' : '';
-      var pinHtml = '<div class="pin-container">' +
+      var pinHtml = '<div class="pin-container" data-id="' + m.id + '">' +
         '<div class="pin-head ' + selectedClass + '" style="background:' + m.gradient + ';">' +
         '<div class="pin-icon">' + getCategorySvg(m.catType) + '</div>' +
         '</div>' +
@@ -226,13 +258,21 @@ export default function NearbyMapScreen() {
       var customIcon = L.divIcon({
         className: 'custom-pin-marker',
         html: pinHtml,
-        iconSize: [28, 36],
-        iconAnchor: [14, 35]
+        iconSize: [32, 40],
+        iconAnchor: [16, 39]
       });
 
       var marker = L.marker([m.lat, m.lng], { icon: customIcon }).addTo(map);
-      marker.on('click', function() {
-        if (window.ReactNativeWebView) {
+
+      marker.on('click', function(e) {
+        L.DomEvent.stopPropagation(e);
+        document.querySelectorAll('.pin-head').forEach(function(el) {
+          el.classList.remove('selected');
+        });
+        var head = marker.getElement() ? marker.getElement().querySelector('.pin-head') : null;
+        if (head) head.classList.add('selected');
+
+        if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
           window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'SELECT_REPORT', id: m.id }));
         } else if (window.parent) {
           window.parent.postMessage(JSON.stringify({ type: 'SELECT_REPORT', id: m.id }), '*');
@@ -241,7 +281,7 @@ export default function NearbyMapScreen() {
     });
 
     window.panToCoordinates = function(lat, lng) {
-      map.flyTo([lat, lng], 15, { duration: 1.0 });
+      map.flyTo([lat, lng], 15, { duration: 0.8 });
     };
   </script>
 </body>
@@ -251,8 +291,8 @@ export default function NearbyMapScreen() {
 
   const handleRecenter = () => {
     if (webViewRef.current && selectedReport) {
-      const lat = selectedReport.latitude || 19.6967;
-      const lng = selectedReport.longitude || 72.7699;
+      const lat = selectedReport.latitude || 19.6970;
+      const lng = selectedReport.longitude || 72.7588;
       webViewRef.current.injectJavaScript(`if (window.panToCoordinates) { window.panToCoordinates(${lat}, ${lng}); } true;`);
     }
   };
@@ -275,7 +315,7 @@ export default function NearbyMapScreen() {
                 categoryFilter === cat && styles.filterChipActive,
                 categoryFilter === cat && isDark && { backgroundColor: colors.tint, borderColor: colors.tint },
               ]}
-              onPress={() => setCategoryFilter(cat)}>
+              onPress={() => handleCategoryPress(cat)}>
               <Text
                 style={[
                   styles.filterChipText,
@@ -319,7 +359,7 @@ export default function NearbyMapScreen() {
         </TouchableOpacity>
 
         {/* Selected Incident Popup Card with Complete Rich Metadata */}
-        {selectedReport && (
+        {selectedReport ? (
           <View style={[styles.popupCardContainer, { bottom: insets.bottom + 80 }]}>
             <View style={[styles.popupCard, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
               {/* Report Thumbnail Image */}
@@ -381,6 +421,15 @@ export default function NearbyMapScreen() {
                   <Text style={styles.viewDetailsText}>View Details</Text>
                 </TouchableOpacity>
               </View>
+            </View>
+          </View>
+        ) : (
+          <View style={[styles.emptyBannerContainer, { bottom: insets.bottom + 85 }]}>
+            <View style={[styles.emptyBanner, isDark && { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+              <AlertCircle size={16} color={CivicCareColors.textSecondary} />
+              <Text style={[styles.emptyBannerText, isDark && { color: colors.textSecondary }]}>
+                No {categoryFilter} reports found in this area.
+              </Text>
             </View>
           </View>
         )}
@@ -453,7 +502,6 @@ const styles = StyleSheet.create({
   },
   popupCardContainer: {
     position: 'absolute',
-    bottom: 95,
     left: Spacing.four,
     right: Spacing.four,
     zIndex: 50,
@@ -540,5 +588,29 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
+  },
+  emptyBannerContainer: {
+    position: 'absolute',
+    left: Spacing.four,
+    right: Spacing.four,
+    alignItems: 'center',
+    zIndex: 50,
+  },
+  emptyBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.two,
+    borderRadius: BorderRadius.full,
+    borderWidth: 1,
+    borderColor: CivicCareColors.border,
+    ...Shadows.md,
+  },
+  emptyBannerText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: CivicCareColors.textSecondary,
   },
 });

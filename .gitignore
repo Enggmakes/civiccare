@@ -42,5 +42,6 @@ yarn-error.*
 test_ai_images/
 image.png
 first-get-started.png
+/logo.png
 CivicCare_Complete_Documentation.zip
 Civic_Issue_Reporting_System_Modules_After_Proposed_System.pptx

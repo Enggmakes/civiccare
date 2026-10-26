@@ -176,7 +176,7 @@ export default function AuthScreen() {
           {/* Header Brand Logo */}
           <View style={styles.logoSection}>
             <Image
-              source={require('@/assets/civiccare/01_civiccare_logo_mark.png')}
+              source={require('@/assets/civiccare/logo.png')}
               style={styles.logoImage}
               resizeMode="contain"
             />
@@ -367,8 +367,8 @@ const styles = StyleSheet.create({
     marginTop: Spacing.two,
   },
   logoImage: {
-    width: 64,
-    height: 64,
+    width: 78,
+    height: 54,
     marginBottom: Spacing.two,
   },
   brandTitle: {

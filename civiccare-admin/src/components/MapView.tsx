@@ -265,27 +265,9 @@ export const MapView: React.FC<MapViewProps> = ({
           </div>
         </div>
 
-        {/* Legend showing category flaticons */}
-        <div style={styles.legendRow}>
-          <div style={styles.legendItem}>
-            <img src="/assets/categories/garbage.png" alt="Garbage" style={{ width: '15px', height: '15px', objectFit: 'contain' }} />
-            <span>Garbage (#10B981)</span>
-          </div>
-          <div style={styles.legendItem}>
-            <img src="/assets/categories/streetlight.png" alt="Streetlight" style={{ width: '15px', height: '15px', objectFit: 'contain' }} />
-            <span>Streetlight (#F59E0B)</span>
-          </div>
-          <div style={styles.legendItem}>
-            <img src="/assets/categories/pothole.png" alt="Pothole" style={{ width: '15px', height: '15px', objectFit: 'contain' }} />
-            <span>Pothole (#0066FF)</span>
-          </div>
-          <div style={styles.legendItem}>
-            <img src="/assets/categories/water_leak.png" alt="Water" style={{ width: '15px', height: '15px', objectFit: 'contain' }} />
-            <span>Water Leak (#06B6D4)</span>
-          </div>
-          <div style={styles.pinsCounter}>
-            <span>{filteredReports.length} Map Markers</span>
-          </div>
+        {/* Active Markers Count Badge */}
+        <div style={styles.pinsCounter}>
+          <span>{filteredReports.length} Map Markers</span>
         </div>
       </div>
 
@@ -416,24 +398,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '12px',
     fontWeight: '600',
     color: 'var(--text-muted)',
-  },
-  legendRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    fontSize: '12px',
-    fontWeight: '600',
-    color: 'var(--text-muted)',
-  },
-  legendItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-  },
-  legendDot: {
-    width: '9px',
-    height: '9px',
-    borderRadius: '50%',
   },
   pinsCounter: {
     backgroundColor: '#EFF6FF',

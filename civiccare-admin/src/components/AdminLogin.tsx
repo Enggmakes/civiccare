@@ -86,8 +86,8 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
       {/* Left Side: Exact aspect ratio matching civiccare_first_welcome_web.png with zero crop */}
       <div className="login-left-banner">
         <img
-          src="/assets/civiccare_first_welcome_web.png"
-          alt="CivicCare Municipal Portal"
+          src="/assets/first_welcome_web.png"
+          alt="CivicCare Portal"
           className="login-banner-img"
         />
       </div>

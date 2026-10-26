@@ -21,7 +21,7 @@ export function App() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('All Categories & Services');
-  const [reports, setReports] = useState<CivicReport[]>(SEED_REPORTS);
+  const [reports, setReports] = useState<CivicReport[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedReport, setSelectedReport] = useState<CivicReport | null>(null);
   const [isDark, setIsDark] = useState<boolean>(false);
@@ -103,7 +103,12 @@ export function App() {
 
   const handleLoginSuccess = (user: AdminUser) => {
     setAdminUser(user);
-    if (user.role === 'dept_admin' && user.department) {
+    if (
+      user.role === 'dept_admin' &&
+      user.department &&
+      !user.department.includes('Operations') &&
+      !user.department.includes('HQ')
+    ) {
       setSelectedDepartment(user.department);
     }
   };

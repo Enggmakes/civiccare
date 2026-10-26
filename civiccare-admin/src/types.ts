@@ -54,3 +54,36 @@ export interface KPIStats {
   resolvedReports: number;
   resolvedGrowth: number;
 }
+
+export function matchesDepartment(report: CivicReport, selectedDept: string): boolean {
+  if (
+    !selectedDept ||
+    selectedDept === 'All Categories & Services' ||
+    selectedDept === 'All Departments' ||
+    selectedDept === 'All' ||
+    selectedDept.startsWith('All') ||
+    selectedDept.includes('Operations HQ') ||
+    selectedDept.includes('Platform Operations')
+  ) {
+    return true;
+  }
+
+  const sel = selectedDept.toLowerCase();
+  const dept = (report.department_name || '').toLowerCase();
+  const cat = (report.category_id || '').toLowerCase();
+
+  if (sel.includes('road')) {
+    return dept.includes('road') || cat.includes('pothole') || cat.includes('road');
+  }
+  if (sel.includes('waste') || sel.includes('sanitation') || sel.includes('garbage')) {
+    return dept.includes('waste') || dept.includes('sanitat') || cat.includes('garbage');
+  }
+  if (sel.includes('electric') || sel.includes('lighting') || sel.includes('light')) {
+    return dept.includes('electric') || dept.includes('light') || cat.includes('streetlight');
+  }
+  if (sel.includes('water') || sel.includes('drainage') || sel.includes('leak')) {
+    return dept.includes('water') || dept.includes('drain') || cat.includes('water');
+  }
+
+  return dept.includes(sel) || sel.includes(dept) || cat.includes(sel) || sel.includes(cat);
+}

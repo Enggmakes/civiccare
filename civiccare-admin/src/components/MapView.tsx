@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import {
   Filter,
@@ -8,12 +8,34 @@ import {
   AlertTriangle,
   ArrowRight,
 } from 'lucide-react';
-import type { CivicReport } from '../types';
+import { matchesDepartment, type CivicReport } from '../types';
 
 interface MapViewProps {
   reports: CivicReport[];
   onSelectReport: (report: CivicReport) => void;
   selectedDepartment: string;
+}
+
+// Auto-center and fit map bounds to active report coordinates
+function MapAutoCenter({ reports }: { reports: CivicReport[] }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (reports.length > 0) {
+      const validCoords = reports
+        .filter((r) => typeof r.latitude === 'number' && typeof r.longitude === 'number' && !isNaN(r.latitude) && !isNaN(r.longitude))
+        .map((r) => [r.latitude, r.longitude] as [number, number]);
+
+      if (validCoords.length === 1) {
+        map.setView(validCoords[0], 13);
+      } else if (validCoords.length > 1) {
+        const bounds = L.latLngBounds(validCoords);
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+      }
+    }
+  }, [reports, map]);
+
+  return null;
 }
 
 // Custom Leaflet SVG Map Pin generator
@@ -75,17 +97,24 @@ export const MapView: React.FC<MapViewProps> = ({
   const [severityFilter, setSeverityFilter] = useState('All');
 
   const filteredReports = reports.filter((r) => {
-    if (selectedDepartment !== 'All Departments' && r.department_name !== selectedDepartment) {
+    if (!matchesDepartment(r, selectedDepartment)) {
       return false;
     }
-    if (statusFilter !== 'All' && r.status !== statusFilter) return false;
+    if (statusFilter !== 'All') {
+      if (statusFilter === 'Pending' && r.status !== 'Pending' && r.status !== 'Submitted') return false;
+      if (statusFilter === 'In Progress' && r.status !== 'In Progress') return false;
+      if (statusFilter === 'Resolved' && r.status !== 'Resolved' && r.status !== 'Closed') return false;
+    }
     if (categoryFilter !== 'All' && r.category_id !== categoryFilter) return false;
     if (severityFilter !== 'All' && r.severity !== severityFilter) return false;
     return true;
   });
 
-  // Calculate center coordinate
-  const defaultCenter: [number, number] = [19.0896, 72.8656];
+  // Calculate dynamic center coordinate
+  const firstWithCoords = filteredReports.find((r) => r.latitude && r.longitude) || reports.find((r) => r.latitude && r.longitude);
+  const defaultCenter: [number, number] = firstWithCoords
+    ? [firstWithCoords.latitude, firstWithCoords.longitude]
+    : [19.6971, 72.7588];
 
   return (
     <div style={styles.container}>
@@ -117,7 +146,7 @@ export const MapView: React.FC<MapViewProps> = ({
               onChange={(e) => setStatusFilter(e.target.value)}
               style={styles.select}>
               <option value="All">All Statuses</option>
-              <option value="Pending">Pending (Red)</option>
+              <option value="Pending">Pending / Submitted (Amber/Red)</option>
               <option value="In Progress">In-Progress (Blue)</option>
               <option value="Resolved">Resolved (Green)</option>
             </select>
@@ -175,6 +204,8 @@ export const MapView: React.FC<MapViewProps> = ({
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+
+          <MapAutoCenter reports={filteredReports} />
 
           {filteredReports.map((report) => (
             <Marker

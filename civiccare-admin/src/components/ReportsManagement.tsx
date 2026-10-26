@@ -6,7 +6,7 @@ import {
   AlertTriangle,
   Sparkles,
 } from 'lucide-react';
-import type { CivicReport } from '../types';
+import { matchesDepartment, type CivicReport } from '../types';
 
 interface ReportsManagementProps {
   reports: CivicReport[];
@@ -27,7 +27,7 @@ export const ReportsManagement: React.FC<ReportsManagementProps> = ({
   // Filter reports
   const filteredReports = reports.filter((r) => {
     // Dept filter
-    if (selectedDepartment !== 'All Departments' && r.department_name !== selectedDepartment) {
+    if (!matchesDepartment(r, selectedDepartment)) {
       return false;
     }
     // Status tab filter
@@ -89,10 +89,11 @@ export const ReportsManagement: React.FC<ReportsManagementProps> = ({
         <div style={styles.segmentedControl}>
           {(['All', 'Pending', 'In Progress', 'Resolved'] as const).map((tab) => {
             const isActive = activeTab === tab;
-            let count = reports.length;
-            if (tab === 'Pending') count = reports.filter((r) => r.status === 'Pending' || r.status === 'Submitted').length;
-            if (tab === 'In Progress') count = reports.filter((r) => r.status === 'In Progress').length;
-            if (tab === 'Resolved') count = reports.filter((r) => r.status === 'Resolved' || r.status === 'Closed').length;
+            const deptReports = reports.filter((r) => matchesDepartment(r, selectedDepartment));
+            let count = deptReports.length;
+            if (tab === 'Pending') count = deptReports.filter((r) => r.status === 'Pending' || r.status === 'Submitted').length;
+            if (tab === 'In Progress') count = deptReports.filter((r) => r.status === 'In Progress').length;
+            if (tab === 'Resolved') count = deptReports.filter((r) => r.status === 'Resolved' || r.status === 'Closed').length;
 
             return (
               <button

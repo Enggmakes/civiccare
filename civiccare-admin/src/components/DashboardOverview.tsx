@@ -56,6 +56,31 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   onSelectReport,
   onViewAllReports,
 }) => {
+  // Dynamically compute category distribution from actual Supabase reports
+  const categoryData = React.useMemo(() => {
+    if (!reports || reports.length === 0) {
+      return [{ name: 'No reports', value: 0, color: '#94A3B8' }];
+    }
+    const counts: Record<string, number> = {};
+    reports.forEach((r) => {
+      const cat = r.category_id || 'General';
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    const palette: Record<string, string> = {
+      Pothole: '#0066FF',
+      Garbage: '#10B981',
+      Streetlight: '#F59E0B',
+      'Water Leak': '#06B6D4',
+      'Broken Road': '#8B5CF6',
+      Others: '#64748B',
+    };
+    return Object.keys(counts).map((cat, i) => ({
+      name: cat,
+      value: counts[cat],
+      color: palette[cat] || ['#0066FF', '#10B981', '#F59E0B', '#06B6D4', '#8B5CF6'][i % 5],
+    }));
+  }, [reports]);
+
   return (
     <div style={styles.container}>
       {/* 4 KPI Metric Cards matching Screen 19 */}
@@ -214,19 +239,19 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             <ResponsiveContainer width="100%" height={260}>
               <PieChart>
                 <Pie
-                  data={CATEGORY_DATA}
+                  data={categoryData}
                   cx="50%"
                   cy="50%"
                   innerRadius={65}
                   outerRadius={95}
                   paddingAngle={3}
                   dataKey="value">
-                  {CATEGORY_DATA.map((entry, index) => (
+                  {categoryData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(val) => `${val}%`}
+                  formatter={(val) => `${val} report${Number(val) > 1 ? 's' : ''}`}
                   contentStyle={{
                     backgroundColor: 'var(--bg-surface)',
                     borderColor: 'var(--border-light)',

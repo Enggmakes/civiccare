@@ -146,10 +146,12 @@ export async function fetchCivicReports(): Promise<CivicReport[]> {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error || !data || data.length === 0) {
-      console.warn('Using seeded reports fallback or Supabase reports empty:', error?.message);
+    if (error) {
+      console.warn('Using seeded reports fallback due to Supabase error:', error?.message);
       return SEED_REPORTS;
     }
+
+    if (!data) return [];
 
     // Merge or normalize Supabase reports
     return data.map((item) => ({
@@ -161,8 +163,8 @@ export async function fetchCivicReports(): Promise<CivicReport[]> {
       severity: item.severity || 'Medium',
       status: item.status || 'Pending',
       formatted_address: item.formatted_address || 'City Ward Area',
-      latitude: item.latitude || 19.076,
-      longitude: item.longitude || 72.8777,
+      latitude: item.latitude || 19.6971,
+      longitude: item.longitude || 72.7588,
       primary_image_url: item.primary_image_url || 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=800&auto=format&fit=crop&q=80',
       department_name: item.department_name || 'Road Maintenance & Infrastructure',
       subscriber_count: item.subscriber_count || 1,
@@ -172,6 +174,13 @@ export async function fetchCivicReports(): Promise<CivicReport[]> {
       resolution_proof_url: item.resolution_proof_url,
       created_at: item.created_at,
       updated_at: item.updated_at,
+      timeline: item.timeline || [
+        { step: 1, title: 'Report Submitted', remarks: 'Citizen submitted grievance', is_completed: true, created_at: item.created_at },
+        { step: 2, title: 'AI Verification', remarks: 'AI model validated issue category', is_completed: true, created_at: item.created_at },
+        { step: 3, title: 'Department Assigned', remarks: item.department_name || 'Routed to operations desk', is_completed: item.status !== 'Submitted', created_at: item.created_at },
+        { step: 4, title: 'In Progress', remarks: 'Field unit assigned', is_completed: item.status === 'In Progress' || item.status === 'Resolved', created_at: '' },
+        { step: 5, title: 'Resolved', remarks: 'Work certified and closed', is_completed: item.status === 'Resolved', created_at: '' },
+      ],
     }));
   } catch (err) {
     console.error('Error fetching reports from Supabase:', err);
@@ -211,19 +220,19 @@ export async function updateReportStatus(
 }
 
 export function computeKPIStats(reports: CivicReport[]): KPIStats {
-  const totalReports = 1284 + reports.length;
-  const pendingReports = 342 + reports.filter((r) => r.status === 'Pending' || r.status === 'Submitted').length;
-  const inProgressReports = 516 + reports.filter((r) => r.status === 'In Progress').length;
-  const resolvedReports = 426 + reports.filter((r) => r.status === 'Resolved' || r.status === 'Closed').length;
+  const totalReports = reports.length;
+  const pendingReports = reports.filter((r) => r.status === 'Pending' || r.status === 'Submitted').length;
+  const inProgressReports = reports.filter((r) => r.status === 'In Progress').length;
+  const resolvedReports = reports.filter((r) => r.status === 'Resolved' || r.status === 'Closed').length;
 
   return {
     totalReports,
-    totalGrowth: 12,
+    totalGrowth: reports.length > 0 ? 100 : 0,
     pendingReports,
-    pendingGrowth: -5,
+    pendingGrowth: pendingReports > 0 ? 100 : 0,
     inProgressReports,
-    inProgressGrowth: 18,
+    inProgressGrowth: inProgressReports > 0 ? 100 : 0,
     resolvedReports,
-    resolvedGrowth: 22,
+    resolvedGrowth: resolvedReports > 0 ? 100 : 0,
   };
 }

@@ -18,30 +18,75 @@ import { DepartmentsView } from './components/DepartmentsView';
 import { UpdateReportDrawer } from './components/UpdateReportDrawer';
 
 export function App() {
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
-  const [currentTab, setCurrentTab] = useState<string>('dashboard');
+  // Persistent Admin Session (survives page refreshes)
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(() => {
+    try {
+      const saved = localStorage.getItem('civiccare_admin_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Persistent Tab Selection (remembers active view)
+  const [currentTab, setCurrentTab] = useState<string>(() => {
+    try {
+      return localStorage.getItem('civiccare_admin_tab') || 'dashboard';
+    } catch {
+      return 'dashboard';
+    }
+  });
+
   const [selectedDepartment, setSelectedDepartment] = useState<string>('All Categories & Services');
   const [reports, setReports] = useState<CivicReport[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedReport, setSelectedReport] = useState<CivicReport | null>(null);
   const [isDark, setIsDark] = useState<boolean>(false);
 
-  // Load initial reports from Supabase
+  // Load initial reports from Supabase & keep live with WebSocket + 2.5s background sync
   useEffect(() => {
+    let isMounted = true;
+
     async function loadData() {
-      const data = await fetchCivicReports();
-      setReports(data);
+      try {
+        const data = await fetchCivicReports();
+        if (isMounted) {
+          setReports((prev) => {
+            if (prev.length === 0) return data;
+            // Compare IDs to see if there's any change
+            const prevMap = new Map(prev.map((r) => [r.id, r]));
+            const isDifferent =
+              data.length !== prev.length ||
+              data.some((r) => {
+                const existing = prevMap.get(r.id);
+                return !existing || existing.status !== r.status || existing.updated_at !== r.updated_at;
+              });
+
+            return isDifferent ? data : prev;
+          });
+        }
+      } catch (err) {
+        console.error('Realtime sync error:', err);
+      }
     }
+
+    // Initial fetch
     loadData();
 
-    // Subscribe to real-time PostgreSQL updates on 'reports'
+    // High-frequency 2.5-second live sync pulse for instantaneous updates without manual reload
+    const livePulse = setInterval(() => {
+      loadData();
+    }, 2500);
+
+    // Subscribe to real-time PostgreSQL updates on 'reports' table
+    const channelName = `realtime:admin_reports_${Date.now()}`;
     const channel = supabase
-      .channel('realtime:admin_reports')
+      .channel(channelName)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'reports' },
         (payload) => {
-          console.log('Realtime Postgres Change received:', payload);
+          console.log('⚡ Realtime Postgres Event:', payload);
           if (payload.eventType === 'INSERT') {
             const newRow = payload.new as any;
             const formatted: CivicReport = {
@@ -53,8 +98,8 @@ export function App() {
               severity: newRow.severity || 'Medium',
               status: newRow.status || 'Pending',
               formatted_address: newRow.formatted_address || 'City Ward Area',
-              latitude: newRow.latitude || 19.076,
-              longitude: newRow.longitude || 72.8777,
+              latitude: newRow.latitude || 19.6971,
+              longitude: newRow.longitude || 72.7588,
               primary_image_url: newRow.primary_image_url || 'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=800&auto=format&fit=crop&q=80',
               department_name: newRow.department_name || 'Road Maintenance & Infrastructure',
               subscriber_count: newRow.subscriber_count || 1,
@@ -78,12 +123,19 @@ export function App() {
                   : r
               )
             );
+          } else if (payload.eventType === 'DELETE') {
+            const oldRow = payload.old as any;
+            setReports((prev) => prev.filter((r) => r.id !== oldRow.id));
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Supabase Realtime Channel Status:', status);
+      });
 
     return () => {
+      isMounted = false;
+      clearInterval(livePulse);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -101,8 +153,22 @@ export function App() {
     setIsDark(!isDark);
   };
 
+  const handleTabChange = (tab: string) => {
+    setCurrentTab(tab);
+    try {
+      localStorage.setItem('civiccare_admin_tab', tab);
+    } catch (err) {
+      console.warn('Failed to persist active tab:', err);
+    }
+  };
+
   const handleLoginSuccess = (user: AdminUser) => {
     setAdminUser(user);
+    try {
+      localStorage.setItem('civiccare_admin_user', JSON.stringify(user));
+    } catch (err) {
+      console.warn('Failed to persist admin session:', err);
+    }
     if (
       user.role === 'dept_admin' &&
       user.department &&
@@ -115,6 +181,12 @@ export function App() {
 
   const handleLogout = () => {
     setAdminUser(null);
+    try {
+      localStorage.removeItem('civiccare_admin_user');
+      localStorage.removeItem('civiccare_admin_tab');
+    } catch (err) {
+      console.warn('Failed to clear admin session:', err);
+    }
   };
 
   const handleSaveReportUpdate = async (
@@ -156,7 +228,7 @@ export function App() {
       {/* Left Sidebar matching Screen 19 */}
       <AdminSidebar
         currentTab={currentTab}
-        onTabChange={(tab) => setCurrentTab(tab)}
+        onTabChange={handleTabChange}
         adminUser={adminUser}
         onLogout={handleLogout}
         isDark={isDark}
@@ -183,7 +255,7 @@ export function App() {
               stats={stats}
               reports={reports}
               onSelectReport={(r) => setSelectedReport(r)}
-              onViewAllReports={() => setCurrentTab('reports')}
+              onViewAllReports={() => handleTabChange('reports')}
             />
           )}
 
